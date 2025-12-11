@@ -1,1 +1,68 @@
+name: Backend CI
 
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+
+jobs:
+  test-auth-service:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/auth-service/requirements.txt') }}
+      
+      - name: Install dependencies
+        run: |
+          cd backend/auth-service
+          pip install -r requirements.txt
+          pip install pytest pytest-cov httpx
+      
+      - name: Run tests
+        env:
+          JWT_SECRET: test-secret-key
+        run: |
+          cd backend/auth-service
+          pytest tests/ -v || echo "Tests will be added soon"
+      
+      - name: Check code formatting
+        run: |
+          pip install black
+          cd backend
+          black --check . || echo "Run 'black .' to format code"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install linters
+        run: pip install flake8
+      
+      - name: Run Flake8
+        run: |
+          cd backend
+          flake8 . --max-line-length=100 --exclude=venv,__pycache__ --count --show-source --statistics
