@@ -1,1 +1,64 @@
+version: '3.9'
 
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: danaya-postgres
+    environment:
+      POSTGRES_USER: danaya
+      POSTGRES_PASSWORD: dev_password_change_in_prod
+      POSTGRES_DB: danaya_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U danaya"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - danaya-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: danaya-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - danaya-network
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ../../backend/auth-service
+      dockerfile: Dockerfile.dev
+    container_name: danaya-auth
+    ports:
+      - "8001:8001"
+    environment:
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      DATABASE_URL: postgresql://danaya:dev_password_change_in_prod@postgres:5432/danaya_dev
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: development
+    volumes:
+      - ../../backend/auth-service:/app
+    depends_on:
+      - postgres
+      - redis
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
+    networks:
+      - danaya-network
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  danaya-network:
+    driver: bridge
