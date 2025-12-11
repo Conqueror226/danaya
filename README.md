@@ -1,3 +1,2 @@
-# healthcare-platform | DANAYA - Digital Adaptive Network for Accessible Healthcare in Africa 
-# Building trust through zero-trust security | National healthcare platform for Burkina Faso 
+# Healthcare-Platform | Danaya ka kɛnɛya! | Digital Adaptive Network for Accessible Healthcare in Africa | Building trust through zero-trust security | National healthcare platform for Burkina Faso 
 A modular, secure healthcare digital platform designed for private-cloud deployment. Supports EHR, telemedicine, scheduling, lab integration, and admin workflows. Built with microservices, strong security, and interoperability (HL7/FHIR) to modernize hospital and clinic information systems.
