@@ -46,20 +46,18 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Password hashing
-pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# ==================== MODELS ====================
 
 class User(BaseModel):
-    """User model (without password)"""
     user_id: str
     email: EmailStr
     full_name: str
@@ -69,71 +67,68 @@ class User(BaseModel):
     is_active: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+
 class UserInDB(User):
-    """User model with hashed password"""
     hashed_password: str
 
+
 class Token(BaseModel):
-    """Access token response"""
     access_token: str
     token_type: str
     expires_in: int
     user: User
 
+
 class UserCreate(BaseModel):
-    """User registration model"""
     email: EmailStr
-    password: str = Field(..., min_length=8, description="Minimum 8 characters")
+    password: str = Field(..., min_length=8)
     full_name: str
     role: str
     hospital_id: str
     department: Optional[str] = None
 
+
 class UserLogin(BaseModel):
-    """Login credentials"""
     email: EmailStr
     password: str
 
-# ==================== FAKE DATABASE ====================
-# In production, replace with PostgreSQL
 
+# Fake database
 fake_users_db = {
-    "doctor@chu-ouaga.bf": UserInDB(
-        user_id="USR001",
-        email="doctor@chu-ouaga.bf",
-        full_name="Dr. Ouedraogo Amadou",
-        role="doctor",
-        hospital_id="HOS001",
-        department="Emergency",
-        hashed_password=pwd_context.hash("Doctor123!"),
-        is_active=True,
-        created_at=datetime.utcnow()
-    ).dict(),
-    "nurse@chu-ouaga.bf": UserInDB(
-        user_id="USR002",
-        email="nurse@chu-ouaga.bf",
-        full_name="Zongo Fatoumata",
-        role="nurse",
-        hospital_id="HOS001",
-        department="Pediatrics",
-        hashed_password=pwd_context.hash("Nurse123!"),
-        is_active=True,
-        created_at=datetime.utcnow()
-    ).dict(),
+    "doctor@chu-ouaga.bf": {
+        "user_id": "USR001",
+        "email": "doctor@chu-ouaga.bf",
+        "full_name": "Dr. Ouedraogo Amadou",
+        "role": "doctor",
+        "hospital_id": "HOS001",
+        "department": "Emergency",
+        "hashed_password": pwd_context.hash("Doctor123!"),
+        "is_active": True,
+        "created_at": datetime.utcnow().isoformat()
+    },
+    "nurse@chu-ouaga.bf": {
+        "user_id": "USR002",
+        "email": "nurse@chu-ouaga.bf",
+        "full_name": "Zongo Fatoumata",
+        "role": "nurse",
+        "hospital_id": "HOS001",
+        "department": "Pediatrics",
+        "hashed_password": pwd_context.hash("Nurse123!"),
+        "is_active": True,
+        "created_at": datetime.utcnow().isoformat()
+    },
 }
 
-# ==================== UTILITIES ====================
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against hash"""
     return pwd_context.verify(plain_password, hashed_password)
 
+
 def get_password_hash(password: str) -> str:
-    """Hash password using Argon2"""
     return pwd_context.hash(password)
 
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create JWT access token"""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -149,8 +144,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
 def authenticate_user(email: str, password: str) -> Optional[UserInDB]:
-    """Authenticate user credentials"""
     user_dict = fake_users_db.get(email)
     if not user_dict:
         logger.warning(f"Login attempt for non-existent user: {email}")
@@ -163,8 +158,8 @@ def authenticate_user(email: str, password: str) -> Optional[UserInDB]:
     logger.info(f"Successful authentication for user: {email}")
     return UserInDB(**user_dict)
 
+
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
-    """Get current user from JWT token"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -191,15 +186,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     
     return User(**user_dict)
 
-def check_role(user: User, allowed_roles: List[str]) -> bool:
-    """Check if user has required role"""
-    return user.role in allowed_roles
 
-# ==================== ENDPOINTS ====================
-
-@app.get("/", tags=["Root"])
+@app.get("/")
 async def root():
-    """Root endpoint with platform info"""
     return {
         "platform": "DANAYA",
         "service": "Authentication",
@@ -209,9 +198,9 @@ async def root():
         "docs": "/docs"
     }
 
-@app.get("/health", tags=["Health"])
+
+@app.get("/health")
 async def health_check():
-    """Health check endpoint for monitoring"""
     return {
         "status": "healthy",
         "service": "danaya-auth",
@@ -220,17 +209,9 @@ async def health_check():
         "motto": "Danaya ka kɛnɛya - Trust in health"
     }
 
-@app.post("/token", response_model=Token, tags=["Authentication"])
+
+@app.post("/token", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    """
-    OAuth2 compatible login endpoint
-    
-    Returns JWT access token for authenticated users.
-    
-    **Test Credentials:**
-    - Email: doctor@chu-ouaga.bf
-    - Password: Doctor123!
-    """
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -260,13 +241,9 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         user=User(**user.dict())
     )
 
-@app.post("/login", response_model=Token, tags=["Authentication"])
+
+@app.post("/login", response_model=Token)
 async def login_json(credentials: UserLogin):
-    """
-    Alternative login endpoint accepting JSON
-    
-    Use this for frontend applications that send JSON instead of form data.
-    """
     user = authenticate_user(credentials.email, credentials.password)
     if not user:
         raise HTTPException(
@@ -293,26 +270,17 @@ async def login_json(credentials: UserLogin):
         user=User(**user.dict())
     )
 
-@app.get("/users/me", response_model=User, tags=["Users"])
+
+@app.get("/users/me", response_model=User)
 async def read_users_me(current_user: User = Depends(get_current_user)):
-    """
-    Get current authenticated user profile
-    
-    Requires valid JWT token in Authorization header.
-    """
     return current_user
 
-@app.post("/users/register", response_model=User, status_code=status.HTTP_201_CREATED, tags=["Users"])
+
+@app.post("/users/register", response_model=User, status_code=status.HTTP_201_CREATED)
 async def register_user(
     user: UserCreate,
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Register new user (admin only)
-    
-    In production, this should be restricted to admin role.
-    """
-    # Check if admin (in production)
     if current_user.role not in ["admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -325,7 +293,6 @@ async def register_user(
             detail="Email already registered"
         )
     
-    # Validate role
     valid_roles = ["doctor", "nurse", "pharmacist", "lab_tech", "admin"]
     if user.role not in valid_roles:
         raise HTTPException(
@@ -333,26 +300,65 @@ async def register_user(
             detail=f"Invalid role. Must be one of: {', '.join(valid_roles)}"
         )
     
-    new_user = UserInDB(
-        user_id=f"USR{len(fake_users_db) + 1:03d}",
-        email=user.email,
-        full_name=user.full_name,
-        role=user.role,
-        hospital_id=user.hospital_id,
-        department=user.department,
-        hashed_password=get_password_hash(user.password),
-        is_active=True,
-        created_at=datetime.utcnow()
-    )
+    new_user_dict = {
+        "user_id": f"USR{len(fake_users_db) + 1:03d}",
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "hospital_id": user.hospital_id,
+        "department": user.department,
+        "hashed_password": get_password_hash(user.password),
+        "is_active": True,
+        "created_at": datetime.utcnow().isoformat()
+    }
     
-    fake_users_db[user.email] = new_user.dict()
+    fake_users_db[user.email] = new_user_dict
     logger.info(f"New user registered: {user.email} (role: {user.role})")
     
-    return User(**new_user.dict())
+    return User(**new_user_dict)
 
-@app.get("/users/list", response_model=List[User], tags=["Users"])
+
+@app.get("/users/list", response_model=List[User])
 async def list_users(current_user: User = Depends(get_current_user)):
-    """
-    List all users (admin only)
+    if current_user.role not in ["admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can list users"
+        )
     
-    Returns list of all registered users without passwords
+    users = [User(**user_dict) for user_dict in fake_users_db.values()]
+    return users
+
+
+@app.post("/logout")
+async def logout(current_user: User = Depends(get_current_user)):
+    logger.info(f"User logged out: {current_user.email}")
+    return {
+        "message": "Successfully logged out",
+        "user": current_user.email
+    }
+
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("=" * 60)
+    logger.info("DANAYA Authentication Service Starting")
+    logger.info("Danaya (Dioula) = Trust | Building trust through zero-trust")
+    logger.info(f"Environment: {os.getenv('ENVIRONMENT', 'development')}")
+    logger.info(f"Registered users: {len(fake_users_db)}")
+    logger.info("=" * 60)
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("DANAYA Authentication Service Shutting Down")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8001,
+        log_level="info"
+    )
