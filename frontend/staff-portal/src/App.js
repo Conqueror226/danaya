@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./App.css";
 
@@ -9,6 +9,13 @@ function App() {
   const [activePage, setActivePage] = useState("dashboard");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // NEW: hospital info
+  const [hospital, setHospital] = useState(null);
+  const [hospitalLoading, setHospitalLoading] = useState(false);
+  const [hospitalError, setHospitalError] = useState("");
+
+  // ========= LOGIN / LOGOUT =========
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -24,9 +31,15 @@ function App() {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
 
-      setUser(res.data.user);
+      const loggedUser = res.data.user;
+      setUser(loggedUser);
       localStorage.setItem("danaya_token", res.data.access_token);
       setActivePage("dashboard");
+
+      // fetch hospital as soon as we know the hospital_id
+      if (loggedUser?.hospital_id) {
+        fetchHospital(loggedUser.hospital_id);
+      }
     } catch (err) {
       console.error(err);
       setError("Email ou mot de passe incorrect");
@@ -37,11 +50,35 @@ function App() {
 
   const handleLogout = () => {
     setUser(null);
+    setHospital(null);
+    setHospitalError("");
     localStorage.removeItem("danaya_token");
     setActivePage("dashboard");
   };
 
-  // --------- CONTENT FOR EACH PAGE (LOGGED IN) ----------
+  // ========= FETCH HOSPITAL =========
+
+  const fetchHospital = async (hospitalId) => {
+    if (!hospitalId) return;
+    setHospitalLoading(true);
+    setHospitalError("");
+
+    try {
+      // backend exposes GET /hospitals/{facility_id}
+      const res = await axios.get(`/hospitals/${hospitalId}`);
+      setHospital(res.data);
+    } catch (err) {
+      console.error("Failed to load hospital", err);
+      setHospitalError("Unable to load hospital information");
+    } finally {
+      setHospitalLoading(false);
+    }
+  };
+
+  // If one day you restore token from localStorage, you can also
+  // call fetchHospital(user.hospital_id) in a useEffect here.
+
+  // ========= PAGES CONTENT =========
 
   const renderPageContent = () => {
     if (!user) return null;
@@ -52,8 +89,8 @@ function App() {
           <div className="page">
             <h2 className="page-title">Dashboard</h2>
             <p className="page-subtitle">
-              Welcome, <strong>{user.full_name}</strong>.{" "}
-              This is your overview of the DANAYA platform.
+              Welcome, <strong>{user.full_name}</strong>. This is your overview
+              of the DANAYA platform.
             </p>
 
             <div className="cards-grid">
@@ -66,7 +103,7 @@ function App() {
                   <strong>Role:</strong> {user.role}
                 </p>
                 <p>
-                  <strong>Hospital:</strong> {user.hospital_id}
+                  <strong>Hospital ID:</strong> {user.hospital_id}
                 </p>
                 <p>
                   <strong>Department:</strong> {user.department || "N/A"}
@@ -74,13 +111,34 @@ function App() {
               </div>
 
               <div className="info-card">
-                <h3>Security & Access</h3>
-                <ul className="list">
-                  <li>✅ Secure authentication (JWT)</li>
-                  <li>✅ Role-based access control (RBAC)</li>
-                  <li>✅ Zero-trust architecture</li>
-                  <li>🔐 Audit-ready access logs</li>
-                </ul>
+                <h3>Hospital</h3>
+                {hospitalLoading && <p>Loading hospital…</p>}
+                {hospitalError && (
+                  <p className="small-error">{hospitalError}</p>
+                )}
+                {hospital && (
+                  <>
+                    <p>
+                      <strong>Name:</strong> {hospital.name}
+                    </p>
+                    <p>
+                      <strong>Type:</strong> {hospital.type}{" "}
+                      {hospital.level && `(${hospital.level})`}
+                    </p>
+                    <p>
+                      <strong>Location:</strong>{" "}
+                      {hospital.city || "—"},{" "}
+                      {hospital.district || ""}
+                    </p>
+                    <p>
+                      <strong>Ownership:</strong>{" "}
+                      {hospital.ownership || "—"}
+                    </p>
+                  </>
+                )}
+                {!hospital && !hospitalLoading && !hospitalError && (
+                  <p>No hospital metadata loaded yet.</p>
+                )}
               </div>
 
               <div className="info-card">
@@ -120,7 +178,9 @@ function App() {
                     <td>32</td>
                     <td>P-000112</td>
                     <td>
-                      <span className="status-badge status-active">Active</span>
+                      <span className="status-badge status-active">
+                        Active
+                      </span>
                     </td>
                   </tr>
                   <tr>
@@ -128,7 +188,9 @@ function App() {
                     <td>45</td>
                     <td>P-000113</td>
                     <td>
-                      <span className="status-badge status-active">Active</span>
+                      <span className="status-badge status-active">
+                        Active
+                      </span>
                     </td>
                   </tr>
                   <tr>
@@ -206,7 +268,7 @@ function App() {
     }
   };
 
-  // --------- LOGGED-IN LAYOUT WITH SIDEBAR ----------
+  // ========= LOGGED-IN LAYOUT (SIDEBAR) =========
 
   if (user) {
     return (
@@ -214,13 +276,32 @@ function App() {
         <aside className="sidebar">
           <div className="sidebar-header">
             <div className="sidebar-logo">DANAYA</div>
-            <div className="sidebar-subtitle">National Health Platform</div>
+            <div className="sidebar-subtitle">
+              National Health Platform
+            </div>
+          </div>
+
+          {/* Hospital block */}
+          <div className="sidebar-hospital">
+            <div className="hospital-logo-circle">
+              {hospital?.name
+                ? hospital.name.charAt(0)
+                : user.full_name?.charAt(0) || "D"}
+            </div>
+            <div className="hospital-info">
+              <div className="hospital-name">
+                {hospital?.name || "Unknown facility"}
+              </div>
+              {hospital && (
+                <div className="hospital-meta">
+                  {hospital.type}
+                  {hospital.level ? ` · ${hospital.level}` : ""}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="sidebar-user">
-            <div className="avatar-circle">
-              {user.full_name?.charAt(0) || "D"}
-            </div>
             <div>
               <div className="sidebar-user-name">{user.full_name}</div>
               <div className="sidebar-user-role">{user.role}</div>
@@ -260,7 +341,9 @@ function App() {
             </button>
             <button
               className={
-                activePage === "labs" ? "nav-item nav-item-active" : "nav-item"
+                activePage === "labs"
+                  ? "nav-item nav-item-active"
+                  : "nav-item"
               }
               onClick={() => setActivePage("labs")}
             >
@@ -303,7 +386,7 @@ function App() {
     );
   }
 
-  // --------- LOGIN SCREEN (ORIGINAL FRENCH DESIGN) ----------
+  // ========= LOGIN SCREEN (KEEPING THE NICE DESIGN) =========
 
   return (
     <div className="App">
@@ -311,7 +394,7 @@ function App() {
         <div className="login-box">
           <div className="logo-section">
             <h1>DANAYA</h1>
-            <p className="subtitle">Plateforme Nationale de Santé du Burkina Faso</p>
+            <p className="subtitle">Plateforme Nationale de Santé</p>
             <p className="tagline">Building trust through zero-trust security</p>
           </div>
 
@@ -333,7 +416,7 @@ function App() {
             </div>
 
             <div className="form-group">
-              <label>🔒 Mot de passe</label>
+              <label>�� Mot de passe</label>
               <input
                 type="password"
                 value={password}
@@ -368,7 +451,8 @@ function App() {
           <footer className="login-footer">
             <p>© 2025 Ministère de la Santé, Burkina Faso</p>
             <p>
-              Développé par <strong>Kader BONZI</strong> | Recherche en Cybersécurité
+              Développé par <strong>Kader BONZI</strong> | Recherche en
+              Cybersécurité
             </p>
           </footer>
         </div>
