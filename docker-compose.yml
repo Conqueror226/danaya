@@ -1,0 +1,64 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: danaya-postgres
+    environment:
+      POSTGRES_USER: danaya
+      POSTGRES_PASSWORD: danaya_dev_2025
+      POSTGRES_DB: danaya_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U danaya"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - danaya-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: danaya-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - danaya-network
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./backend/auth-service
+      dockerfile: Dockerfile
+    container_name: danaya-auth
+    ports:
+      - "8001:8001"
+    environment:
+      JWT_SECRET: ministry-demo-secret-2025
+      DATABASE_URL: postgresql://danaya:danaya_dev_2025@postgres:5432/danaya_db
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: demo
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - danaya-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  danaya-network:
+    driver: bridge
