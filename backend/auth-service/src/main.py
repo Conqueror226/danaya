@@ -81,6 +81,10 @@ class UserLogin(BaseModel):
     password: str
 
 
+# Initialize password context first
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Fake database - hash generated fresh on startup
 fake_users_db = {
     "doctor@chu-ouaga.bf": {
         "user_id": "USR001",
@@ -89,7 +93,18 @@ fake_users_db = {
         "role": "doctor",
         "hospital_id": "HOS001",
         "department": "Emergency",
-        "hashed_password": "$2b$12$KIXxkzV5LvH.XxJ9qZ7QEeGjH0QJZvY3C0Q3xZQ9Q3Q3Q3Q3Q3Q3Q",
+        "hashed_password": pwd_context.hash("Doctor123!"),
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    },
+    "nurse@chu-ouaga.bf": {
+        "user_id": "USR002",
+        "email": "nurse@chu-ouaga.bf",
+        "full_name": "Zongo Fatoumata",
+        "role": "nurse",
+        "hospital_id": "HOS001",
+        "department": "Pediatrics",
+        "hashed_password": pwd_context.hash("Nurse123!"),
         "is_active": True,
         "created_at": datetime.now(timezone.utc).isoformat()
     }

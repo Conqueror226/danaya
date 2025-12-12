@@ -1,0 +1,363 @@
+{
+  "country": "Burkina Faso",
+  "version": "2025-01-12",
+  "regions": [
+    {
+      "region_id": "BF-REG-01",
+      "name": "Boucle du Mouhoun",
+      "facilities": [
+        {
+          "id": "BF-CHR-DED",
+          "short_code": "CHR_DEDOUGOU",
+          "name": "CHR de Dédougou",
+          "type": "CHR",
+          "level": "secondary",
+          "ownership": "public",
+          "district": "Dédougou",
+          "city": "Dédougou",
+          "address": "Dédougou, Burkina Faso",
+          "logo_url": "/assets/hospitals/chr_dedougou.png",
+          "capabilities": {
+            "emergency": true,
+            "surgery": true,
+            "maternity": true,
+            "laboratory": true,
+            "pharmacy": true,
+            "imaging": ["xray", "ct"]
+          },
+          "status": "active"
+        },
+        {
+          "id": "BF-CMA-NDW",
+          "short_code": "CMA_NOUNA",
+          "name": "CMA de Nouna",
+          "type": "CMA",
+          "level": "secondary",
+          "ownership": "public",
+          "district": "Nouna",
+          "city": "Nouna",
+          "address": "Nouna, Burkina Faso",
+          "logo_url": "/assets/hospitals/cma_nouna.png",
+          "capabilities": {
+            "emergency": true,
+            "surgery": true,
+            "maternity": true,
+            "laboratory": true,
+            "pharmacy": true,
+            "imaging": ["xray"]
+          },
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "region_id": "BF-REG-02",
+      "name": "Cascades",
+      "facilities": [
+        {
+          "id": "BF-CMA-BANFORA",
+          "short_code": "CMA_BANFORA",
+          "name": "CMA de Banfora",
+          "type": "CMA",
+          "level": "secondary",
+          "ownership": "public",
+          "district": "Banfora",
+          "city": "Banfora",
+          "address": "Banfora, Burkina Faso",
+          "logo_url": "/assets/hospitals/cma_banfora.png",
+          "capabilities": {
+            "emergency": true,
+            "surgery": false,
+            "maternity": true,
+            "laboratory": true,
+            "pharmacy": true
+          },
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "region_id": "BF-REG-03",
+      "name": "Centre",
+      "facilities": [
+        {
+          "id": "BF-CHU-YALG",
+          "short_code": "CHU_YALGADO",
+          "name": "CHU Yalgado Ouédraogo",
+          "type": "CHU",
+          "level": "tertiary",
+          "ownership": "public",
+          "district": "Ouagadougou",
+          "city": "Ouagadougou",
+          "address": "Avenue de l’Indépendance, Ouagadougou",
+          "logo_url": "/assets/hospitals/chu_yalgado.png",
+          "capabilities": {
+            "emergency": true,
+            "surgery": true,
+            "maternity": true,
+            "laboratory": true,
+            "pharmacy": true,
+            "imaging": ["xray", "ct", "mri"]
+          },
+          "status": "active"
+        },
+        {
+          "id": "BF-CHU-TENG",
+          "short_code": "CHU_TENG",
+          "name": "CHU de Tengandogo",
+          "type": "CHU",
+          "level": "tertiary",
+          "ownership": "public",
+          "district": "Ouagadougou",
+          "city": "Ouagadougou",
+          "address": "Route de Pô",
+          "logo_url": "/assets/hospitals/chu_tengandogo.png",
+          "capabilities": {
+            "emergency": true,
+            "surgery": true,
+            "maternity": true,
+            "laboratory": true,
+            "pharmacy": true,
+            "imaging": ["xray", "ct"]
+          },
+          "status": "active"
+        },
+        {
+          "id": "BF-CHU-BLAISE",
+          "short_code": "CHU_BLAISE",
+          "name": "CHU Blaise Compaoré",
+          "type": "CHU",
+          "level": "tertiary",
+          "ownership": "public",
+          "district": "Ouagadougou",
+          "city": "Ouagadougou",
+          "address": "Ouaga 2000",
+          "logo_url": "/assets/hospitals/chu_blaise.png",
+          "capabilities": {
+            "emergency": true,
+            "surgery": true,
+            "maternity": true,
+            "laboratory": true,
+            "pharmacy": true,
+            "imaging": ["xray", "ct", "mri"]
+          },
+          "status": "active"
+        },
+        {
+          "id": "BF-CSPS-YDE-001",
+          "short_code": "CSPS_YDE_001",
+          "name": "CSPS Yamtenga Secteur 1",
+          "type": "CSPS",
+          "level": "primary",
+          "ownership": "public",
+          "district": "Ouagadougou",
+          "city": "Ouagadougou",
+          "logo_url": "/assets/hospitals/csps_default.png",
+          "capabilities": {
+            "emergency": false,
+            "maternity": true,
+            "pharmacy": true
+          },
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "region_id": "BF-REG-04",
+      "name": "Centre-Est",
+      "facilities": [
+        {
+          "id": "BF-CHR-TEN",
+          "short_code": "CHR_TENKODOGO",
+          "name": "CHR de Tenkodogo",
+          "type": "CHR",
+          "level": "secondary",
+          "ownership": "public",
+          "district": "Tenkodogo",
+          "city": "Tenkodogo",
+          "address": "Tenkodogo",
+          "logo_url": "/assets/hospitals/chr_tenkodogo.png",
+          "capabilities": {
+            "emergency": true,
+            "surgery": true,
+            "laboratory": true,
+            "pharmacy": true
+          },
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "region_id": "BF-REG-05",
+      "name": "Centre-Nord",
+      "facilities": [
+        {
+          "id": "BF-CMA-KAYA",
+          "short_code": "CMA_KAYA",
+          "name": "CMA de Kaya",
+          "type": "CMA",
+          "level": "secondary",
+          "ownership": "public",
+          "district": "Kaya",
+          "city": "Kaya",
+          "address": "Kaya",
+          "logo_url": "/assets/hospitals/cma_kaya.png",
+          "capabilities": {
+            "emergency": true,
+            "surgery": false,
+            "maternity": true,
+            "laboratory": true,
+            "pharmacy": true
+          },
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "region_id": "BF-REG-06",
+      "name": "Centre-Ouest",
+      "facilities": [
+        {
+          "id": "BF-CHR-KDG",
+          "short_code": "CHR_KOUDOUGOU",
+          "name": "CHR de Koudougou",
+          "type": "CHR",
+          "level": "secondary",
+          "ownership": "public",
+          "district": "Koudougou",
+          "city": "Koudougou",
+          "address": "Koudougou",
+          "logo_url": "/assets/hospitals/chr_koudougou.png",
+          "capabilities": {
+            "emergency": true,
+            "surgery": true,
+            "maternity": true,
+            "laboratory": true,
+            "pharmacy": true
+          },
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "region_id": "BF-REG-07",
+      "name": "Centre-Sud",
+      "facilities": [
+        {
+          "id": "BF-CMA-MANGA",
+          "short_code": "CMA_MANGA",
+          "name": "CMA de Manga",
+          "type": "CMA",
+          "level": "secondary",
+          "ownership": "public",
+          "district": "Manga",
+          "city": "Manga",
+          "address": "Manga",
+          "logo_url": "/assets/hospitals/cma_manga.png",
+          "capabilities": {
+            "emergency": true,
+            "surgery": false,
+            "maternity": true,
+            "laboratory": true,
+            "pharmacy": true
+          },
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "region_id": "BF-REG-11",
+      "name": "Hauts-Bassins",
+      "facilities": [
+        {
+          "id": "BF-CHU-BOBO",
+          "short_code": "CHU_BOBO",
+          "name": "CHU de Bobo-Dioulasso",
+          "type": "CHU",
+          "level": "tertiary",
+          "ownership": "public",
+          "district": "Bobo-Dioulasso",
+          "city": "Bobo-Dioulasso",
+          "address": "Bobo-Dioulasso",
+          "logo_url": "/assets/hospitals/chu_bobo.png",
+          "capabilities": {
+            "emergency": true,
+            "surgery": true,
+            "maternity": true,
+            "laboratory": true,
+            "imaging": ["xray", "ct"]
+          },
+          "status": "active"
+        },
+        {
+          "id": "BF-CHR-HD",
+          "short_code": "CHR_HOUNDE",
+          "name": "CHR de Houndé",
+          "type": "CHR",
+          "level": "secondary",
+          "ownership": "public",
+          "district": "Houndé",
+          "city": "Houndé",
+          "address": "Houndé",
+          "logo_url": "/assets/hospitals/chr_hounde.png",
+          "capabilities": {
+            "emergency": true,
+            "surgery": true,
+            "laboratory": true,
+            "pharmacy": true
+          },
+          "status": "active"
+        }
+      ]
+    },
+
+    {
+      "region_id": "BF-REG-13",
+      "name": "Sahel",
+      "facilities": [
+        {
+          "id": "BF-CMA-DORI",
+          "short_code": "CMA_DORI",
+          "name": "CMA de Dori",
+          "type": "CMA",
+          "level": "secondary",
+          "ownership": "public",
+          "district": "Dori",
+          "city": "Dori",
+          "address": "Dori",
+          "logo_url": "/assets/hospitals/cma_dori.png",
+          "capabilities": {
+            "emergency": true,
+            "surgery": false,
+            "laboratory": true,
+            "pharmacy": true
+          },
+          "status": "active"
+        },
+        {
+          "id": "BF-CSPS-DOR-01",
+          "short_code": "CSPS_DORI_01",
+          "name": "CSPS de Dori Secteur 1",
+          "type": "CSPS",
+          "level": "primary",
+          "ownership": "public",
+          "district": "Dori",
+          "city": "Dori",
+          "logo_url": "/assets/hospitals/csps_default.png",
+          "capabilities": {
+            "maternity": true,
+            "pharmacy": true
+          },
+          "status": "active"
+        }
+      ]
+    }
+  ]
+}

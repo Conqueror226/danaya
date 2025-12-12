@@ -1,35 +1,35 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import './App.css';
+import React, { useState } from "react";
+import axios from "axios";
+import "./App.css";
 
 function App() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("doctor@chu-ouaga.bf");
+  const [password, setPassword] = useState("Doctor123!");
   const [user, setUser] = useState(null);
-  const [error, setError] = useState('');
+  const [activePage, setActivePage] = useState("dashboard");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('username', email);
-      formData.append('password', password);
+      const formData = new URLSearchParams();
+      formData.append("username", email);
+      formData.append("password", password);
 
-      const response = await axios.post(
-        '/token',
-        formData,
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-      );
+      const res = await axios.post("/token", formData, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      });
 
-      setUser(response.data.user);
-      localStorage.setItem('token', response.data.access_token);
+      setUser(res.data.user);
+      localStorage.setItem("danaya_token", res.data.access_token);
+      setActivePage("dashboard");
     } catch (err) {
-      setError('Email ou mot de passe incorrect');
-      console.error('Login error:', err);
+      console.error(err);
+      setError("Email ou mot de passe incorrect");
     } finally {
       setLoading(false);
     }
@@ -37,66 +37,273 @@ function App() {
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem('token');
+    localStorage.removeItem("danaya_token");
+    setActivePage("dashboard");
   };
+
+  // --------- CONTENT FOR EACH PAGE (LOGGED IN) ----------
+
+  const renderPageContent = () => {
+    if (!user) return null;
+
+    switch (activePage) {
+      case "dashboard":
+        return (
+          <div className="page">
+            <h2 className="page-title">Dashboard</h2>
+            <p className="page-subtitle">
+              Welcome, <strong>{user.full_name}</strong>.{" "}
+              This is your overview of the DANAYA platform.
+            </p>
+
+            <div className="cards-grid">
+              <div className="info-card">
+                <h3>User Information</h3>
+                <p>
+                  <strong>Email:</strong> {user.email}
+                </p>
+                <p>
+                  <strong>Role:</strong> {user.role}
+                </p>
+                <p>
+                  <strong>Hospital:</strong> {user.hospital_id}
+                </p>
+                <p>
+                  <strong>Department:</strong> {user.department || "N/A"}
+                </p>
+              </div>
+
+              <div className="info-card">
+                <h3>Security & Access</h3>
+                <ul className="list">
+                  <li>✅ Secure authentication (JWT)</li>
+                  <li>✅ Role-based access control (RBAC)</li>
+                  <li>✅ Zero-trust architecture</li>
+                  <li>🔐 Audit-ready access logs</li>
+                </ul>
+              </div>
+
+              <div className="info-card">
+                <h3>Platform Vision</h3>
+                <ul className="list">
+                  <li>🏥 National hospital coverage</li>
+                  <li>👨‍⚕️ Support for doctors, nurses & admins</li>
+                  <li>📊 Better data for health decisions</li>
+                  <li>🌍 Built in Burkina Faso for Burkina Faso</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "patients":
+        return (
+          <div className="page">
+            <h2 className="page-title">Patients</h2>
+            <p className="page-subtitle">
+              This is a demo patients list. Later it will connect to the patient
+              service.
+            </p>
+            <div className="table-wrapper">
+              <table className="simple-table">
+                <thead>
+                  <tr>
+                    <th>Patient</th>
+                    <th>Age</th>
+                    <th>Hospital ID</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Zongo Awa</td>
+                    <td>32</td>
+                    <td>P-000112</td>
+                    <td>
+                      <span className="status-badge status-active">Active</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Ouedraogo Salif</td>
+                    <td>45</td>
+                    <td>P-000113</td>
+                    <td>
+                      <span className="status-badge status-active">Active</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Sawadogo Mariam</td>
+                    <td>28</td>
+                    <td>P-000114</td>
+                    <td>
+                      <span className="status-badge status-discharged">
+                        Discharged
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+
+      case "appointments":
+        return (
+          <div className="page">
+            <h2 className="page-title">Appointments</h2>
+            <p className="page-subtitle">
+              Here you will later manage patient appointments and schedules.
+            </p>
+            <p className="placeholder-box">
+              📅 Appointment scheduling, calendars and triage logic will be
+              implemented here.
+            </p>
+          </div>
+        );
+
+      case "labs":
+        return (
+          <div className="page">
+            <h2 className="page-title">Lab Results</h2>
+            <p className="page-subtitle">
+              Integration with laboratory systems (HL7/FHIR) will appear here.
+            </p>
+            <p className="placeholder-box">
+              🧪 Demo view for lab results and imaging reports.
+            </p>
+          </div>
+        );
+
+      case "prescriptions":
+        return (
+          <div className="page">
+            <h2 className="page-title">Prescriptions</h2>
+            <p className="page-subtitle">
+              Electronic prescriptions and pharmacy integration will be
+              available here.
+            </p>
+            <p className="placeholder-box">
+              💊 e-Prescriptions, renewals and drug interactions.
+            </p>
+          </div>
+        );
+
+      case "settings":
+        return (
+          <div className="page">
+            <h2 className="page-title">Settings</h2>
+            <p className="page-subtitle">
+              Future area for user profile, preferences and access settings.
+            </p>
+            <p className="placeholder-box">
+              ⚙️ Profile information, language, theme, security options.
+            </p>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // --------- LOGGED-IN LAYOUT WITH SIDEBAR ----------
 
   if (user) {
     return (
-      <div className="App">
-        <div className="dashboard">
-          <header className="dashboard-header">
-            <h1>DANAYA</h1>
-            <p className="tagline">Danaya ka kɛnɛya - Trust in health</p>
-          </header>
-          
-          <div className="user-card">
-            <div className="user-info">
-              <h2>Bienvenue, {user.full_name}</h2>
-              <div className="user-details">
-                <p><strong>Email:</strong> {user.email}</p>
-                <p><strong>Rôle:</strong> <span className="role-badge">{user.role}</span></p>
-                <p><strong>Hôpital:</strong> {user.hospital_id}</p>
-                <p><strong>Service:</strong> {user.department || 'N/A'}</p>
-              </div>
-            </div>
-            
-            <div className="demo-features">
-              <h3>Fonctionnalités Disponibles</h3>
-              <ul>
-                <li><span className="status-active">✅</span> Authentification sécurisée (JWT)</li>
-                <li><span className="status-active">✅</span> Gestion des rôles (RBAC)</li>
-                <li><span className="status-active">✅</span> Architecture zero-trust</li>
-                <li><span className="status-active">✅</span> Chiffrement end-to-end</li>
-                <li><span className="status-pending">🚧</span> Dossiers patients (en développement)</li>
-                <li><span className="status-pending">🚧</span> Résultats de laboratoire (bientôt)</li>
-                <li><span className="status-pending">🚧</span> Prescriptions électroniques (bientôt)</li>
-                <li><span className="status-pending">🚧</span> Télémédecine (planifié)</li>
-              </ul>
-            </div>
+      <div className="app app-with-sidebar">
+        <aside className="sidebar">
+          <div className="sidebar-header">
+            <div className="sidebar-logo">DANAYA</div>
+            <div className="sidebar-subtitle">National Health Platform</div>
+          </div>
 
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-number">180+</div>
-                <div className="stat-label">Établissements ciblés</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number">8M+</div>
-                <div className="stat-label">Patients potentiels</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number">99.5%</div>
-                <div className="stat-label">Disponibilité cible</div>
-              </div>
+          <div className="sidebar-user">
+            <div className="avatar-circle">
+              {user.full_name?.charAt(0) || "D"}
             </div>
-            
-            <button onClick={handleLogout} className="logout-btn">
-              🚪 Déconnexion
+            <div>
+              <div className="sidebar-user-name">{user.full_name}</div>
+              <div className="sidebar-user-role">{user.role}</div>
+            </div>
+          </div>
+
+          <nav className="sidebar-nav">
+            <button
+              className={
+                activePage === "dashboard"
+                  ? "nav-item nav-item-active"
+                  : "nav-item"
+              }
+              onClick={() => setActivePage("dashboard")}
+            >
+              🏠 Dashboard
+            </button>
+            <button
+              className={
+                activePage === "patients"
+                  ? "nav-item nav-item-active"
+                  : "nav-item"
+              }
+              onClick={() => setActivePage("patients")}
+            >
+              👨‍⚕️ Patients
+            </button>
+            <button
+              className={
+                activePage === "appointments"
+                  ? "nav-item nav-item-active"
+                  : "nav-item"
+              }
+              onClick={() => setActivePage("appointments")}
+            >
+              📅 Appointments
+            </button>
+            <button
+              className={
+                activePage === "labs" ? "nav-item nav-item-active" : "nav-item"
+              }
+              onClick={() => setActivePage("labs")}
+            >
+              🧪 Lab Results
+            </button>
+            <button
+              className={
+                activePage === "prescriptions"
+                  ? "nav-item nav-item-active"
+                  : "nav-item"
+              }
+              onClick={() => setActivePage("prescriptions")}
+            >
+              💊 Prescriptions
+            </button>
+            <button
+              className={
+                activePage === "settings"
+                  ? "nav-item nav-item-active"
+                  : "nav-item"
+              }
+              onClick={() => setActivePage("settings")}
+            >
+              ⚙️ Settings
+            </button>
+          </nav>
+
+          <div className="sidebar-footer">
+            <div className="sidebar-footer-text">
+              Danaya ka kɛnɛya – Trust in health
+            </div>
+            <button className="btn-secondary btn-logout" onClick={handleLogout}>
+              Log out
             </button>
           </div>
-        </div>
+        </aside>
+
+        <main className="main-content">{renderPageContent()}</main>
       </div>
     );
   }
+
+  // --------- LOGIN SCREEN (ORIGINAL FRENCH DESIGN) ----------
 
   return (
     <div className="App">
@@ -110,9 +317,9 @@ function App() {
 
           <form onSubmit={handleLogin}>
             <h2>Connexion Personnel Médical</h2>
-            
+
             {error && <div className="error-message">⚠️ {error}</div>}
-            
+
             <div className="form-group">
               <label>📧 Email</label>
               <input
@@ -137,14 +344,20 @@ function App() {
             </div>
 
             <button type="submit" disabled={loading} className="login-btn">
-              {loading ? '⏳ Connexion...' : '🔐 Se connecter'}
+              {loading ? "⏳ Connexion..." : "🔐 Se connecter"}
             </button>
           </form>
 
           <div className="demo-credentials">
-            <p><strong>🎭 Compte de démonstration:</strong></p>
-            <p><code>doctor@chu-ouaga.bf</code></p>
-            <p><code>Doctor123!</code></p>
+            <p>
+              <strong>🎭 Compte de démonstration:</strong>
+            </p>
+            <p>
+              <code>doctor@chu-ouaga.bf</code>
+            </p>
+            <p>
+              <code>Doctor123!</code>
+            </p>
           </div>
 
           <div className="security-badge">
@@ -154,7 +367,9 @@ function App() {
 
           <footer className="login-footer">
             <p>© 2025 Ministère de la Santé, Burkina Faso</p>
-            <p>Développé par <strong>Kader BONZI</strong> | Recherche en Cybersécurité</p>
+            <p>
+              Développé par <strong>Kader BONZI</strong> | Recherche en Cybersécurité
+            </p>
           </footer>
         </div>
       </div>
