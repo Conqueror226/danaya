@@ -1,50 +1,33 @@
 """
-DANAYA Authentication & Registry Service
+DANAYA Authentication Service
 
-In Dioula, 'danaya' means trust - the foundation of healthcare.
-This service provides:
-- Authentication (JWT)
-- National facility registry (hospitals_bf.json)
-
-Copyright (c) 2025
+Copyright (c) 2025 Kader BONZI
+Licensed under the Apache License, Version 2.0
 """
 
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime, timedelta, timezone
-from typing import Optional, List
+from typing import Optional
 from jose import jwt
 import hashlib
 import os
 import logging
-import json
-from pathlib import Path
-from functools import lru_cache
-
-# =========================
-# CONFIG
-# =========================
+import httpx
 
 SECRET_KEY = os.getenv("JWT_SECRET", "dev-secret-CHANGE-IN-PRODUCTION")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-BASE_DIR = Path(__file__).resolve().parent.parent  # /backend/auth-service
-REGISTRY_PATH = BASE_DIR.parent / "registry" / "hospitals_bf.json"
-
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("danaya-auth-registry")
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="DANAYA Auth & Registry Service",
-    description="Zero-trust authentication + National Facility Registry for Burkina Faso.",
-    version="0.2.0",
-    contact={
-        "name": "DANAYA Platform",
-        "url": "https://github.com/Conqueror226/danaya",
-    },
+    title="DANAYA Auth Service",
+    description="Zero-trust authentication. Danaya (Dioula) = Trust.",
+    version="0.1.0",
 )
 
 app.add_middleware(
@@ -57,20 +40,11 @@ app.add_middleware(
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# =========================
-# SIMPLE PASSWORD HASHING (DEMO)
-# =========================
-
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return hash_password(plain_password) == hashed_password
-
-# =========================
-# USER MODELS
-# =========================
 
 class User(BaseModel):
     user_id: str
@@ -82,120 +56,122 @@ class User(BaseModel):
     is_active: bool = True
     created_at: str
 
-
 class UserInDB(User):
     hashed_password: str
 
+class Hospital(BaseModel):
+    id: str
+    name: str
+    short_code: str
+    type: str
+    level: str
+    region_name: str
+    city: str
+    logo_url: str
+    logo_color: str
 
 class Token(BaseModel):
     access_token: str
     token_type: str
     expires_in: int
     user: User
-
+    hospital: Optional[Hospital] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-# =========================
-# FACILITY REGISTRY MODELS
-# =========================
-
-class Facility(BaseModel):
-    id: str
-    short_code: str
-    name: str
-    type: str                   # CHU, CHR, CMA, CSPS, etc.
-    level: Optional[str] = None # primary / secondary / tertiary
-    ownership: Optional[str] = None
-    district: Optional[str] = None
-    city: Optional[str] = None
-    address: Optional[str] = None
-    logo_url: Optional[str] = None
-    capabilities: Optional[dict] = None
-    status: Optional[str] = None
-
-
-class Region(BaseModel):
-    region_id: str
-    name: str
-    facilities: List[Facility]
-
-
-class FacilityRegistry(BaseModel):
-    country: str
-    version: str
-    regions: List[Region]
-
-# =========================
-# FAKE USERS DB (DEMO)
-# =========================
-
+# Demo users - now with proper hospital IDs matching registry
 fake_users_db = {
     "doctor@chu-ouaga.bf": {
         "user_id": "USR001",
         "email": "doctor@chu-ouaga.bf",
         "full_name": "Dr. Ouedraogo Amadou",
         "role": "doctor",
-        "hospital_id": "BF-CHU-TENG",  # must match a facility id in hospitals_bf.json
+        "hospital_id": "BF-CHU-YALG",  # CHU Yalgado
         "department": "Emergency",
+        "hashed_password": hash_password("Doctor123!"),
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    },
+    "nurse@chu-ouaga.bf": {
+        "user_id": "USR002",
+        "email": "nurse@chu-ouaga.bf",
+        "full_name": "Zongo Fatoumata",
+        "role": "nurse",
+        "hospital_id": "BF-CHU-YALG",  # CHU Yalgado
+        "department": "Pediatrics",
+        "hashed_password": hash_password("Nurse123!"),
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    },
+    "admin@danaya.bf": {
+        "user_id": "USR003",
+        "email": "admin@danaya.bf",
+        "full_name": "Administrateur Système",
+        "role": "admin",
+        "hospital_id": "BF-CHU-YALG",  # CHU Yalgado for now
+        "department": "IT",
+        "hashed_password": hash_password("Admin123!"),
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    },
+    "doctor@chu-bobo.bf": {
+        "user_id": "USR004",
+        "email": "doctor@chu-bobo.bf",
+        "full_name": "Dr. Kone Seydou",
+        "role": "doctor",
+        "hospital_id": "BF-CHU-BOBO",  # CHU Bobo-Dioulasso
+        "department": "Surgery",
         "hashed_password": hash_password("Doctor123!"),
         "is_active": True,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
 }
 
-# =========================
-# REGISTRY LOADING
-# =========================
-
-BASE_DIR = Path(__file__).resolve().parent.parent  # /backend/auth-service
-REGISTRY_PATH = BASE_DIR.parent / "registry" / "hospitals_bf.json"
-
-
-@lru_cache(maxsize=1)
-def load_registry() -> FacilityRegistry:
-    if not REGISTRY_PATH.exists():
-        logger.error(f"Registry file not found at {REGISTRY_PATH}")
-        raise RuntimeError("Hospital registry file missing")
-
-    with REGISTRY_PATH.open("r", encoding="utf-8") as f:
-        data = json.load(f)
-    return FacilityRegistry(**data)
-
-
-def flatten_facilities(registry: FacilityRegistry) -> List[Facility]:
-    facilities: List[Facility] = []
-    for region in registry.regions:
-        for fac in region.facilities:
-            facilities.append(fac)
-    return facilities
-
-
-def get_facility_by_id(facility_id: str) -> Optional[Facility]:
-    reg = load_registry()
-    for region in reg.regions:
-        for fac in region.facilities:
-            if fac.id == facility_id:
-                return fac
+async def get_hospital_info(hospital_id: str) -> Optional[Hospital]:
+    """Fetch hospital information from registry service"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"http://localhost:8003/facilities/{hospital_id}",
+                timeout=5.0
+            )
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Color mapping by type
+                type_colors = {
+                    "CHU": "#0047AB",
+                    "CHR": "#00A651",
+                    "CMA": "#FDB813",
+                    "CSPS": "#20B2AA"
+                }
+                
+                return Hospital(
+                    id=data["id"],
+                    name=data["name"],
+                    short_code=data["short_code"],
+                    type=data["type"],
+                    level=data["level"],
+                    region_name=data["region_name"],
+                    city=data["city"],
+                    logo_url=data["logo_url"],
+                    logo_color=type_colors.get(data["type"], "#0047AB")
+                )
+    except Exception as e:
+        logger.error(f"Failed to fetch hospital info for {hospital_id}: {e}")
     return None
-
-# =========================
-# AUTH HELPERS
-# =========================
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            minutes=ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    
     to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
 
 def authenticate_user(email: str, password: str) -> Optional[UserInDB]:
     user_dict = fake_users_db.get(email)
@@ -208,7 +184,6 @@ def authenticate_user(email: str, password: str) -> Optional[UserInDB]:
     logger.info(f"Successful authentication for user: {email}")
     return UserInDB(**user_dict)
 
-
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -220,49 +195,43 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-    except Exception:
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+        )
+    except jwt.PyJWTError:
         raise credentials_exception
-
+    
     user_dict = fake_users_db.get(email)
     if user_dict is None:
         raise credentials_exception
     return User(**user_dict)
 
-# =========================
-# ROOT & HEALTH
-# =========================
-
 @app.get("/")
 async def root():
-  registry = load_registry()
-  return {
-      "platform": "DANAYA",
-      "service": "Authentication & Registry",
-      "meaning": "Danaya (Dioula) = Trust",
-      "motto": "Building trust through zero-trust security",
-      "version": "0.2.0",
-      "registry_country": registry.country,
-      "registry_version": registry.version,
-      "docs": "/docs"
-  }
-
+    return {
+        "platform": "DANAYA",
+        "service": "Authentication",
+        "meaning": "Danaya (Dioula) = Trust",
+        "motto": "Building trust through zero-trust security",
+        "version": "0.1.0",
+        "docs": "/docs"
+    }
 
 @app.get("/health")
 async def health_check():
     return {
         "status": "healthy",
-        "service": "danaya-auth-registry",
-        "version": "0.2.0",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "motto": "Danaya ka kɛnɛya - Trust in health"
+        "service": "danaya-auth",
+        "version": "0.1.0",
+        "users_registered": len(fake_users_db)
     }
-
-# =========================
-# AUTH ROUTES
-# =========================
 
 @app.post("/token", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    logger.info(f"Login attempt for: {form_data.username}")
+    
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -270,28 +239,31 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
+    
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is inactive",
+            detail="Account is inactive"
         )
-
+    
+    # Fetch hospital information
+    hospital = await get_hospital_info(user.hospital_id)
+    
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email, "role": user.role},
-        expires_delta=access_token_expires,
+        expires_delta=access_token_expires
     )
-
-    logger.info(f"Token issued for user: {user.email}")
-
+    
+    logger.info(f"✅ Token issued for user: {user.email} at {hospital.name if hospital else user.hospital_id}")
+    
     return Token(
         access_token=access_token,
         token_type="bearer",
         expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         user=User(**user.dict()),
+        hospital=hospital
     )
-
 
 @app.post("/login", response_model=Token)
 async def login_json(credentials: UserLogin):
@@ -299,125 +271,36 @@ async def login_json(credentials: UserLogin):
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Incorrect email or password"
         )
-
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is inactive",
-        )
-
+    
+    # Fetch hospital information
+    hospital = await get_hospital_info(user.hospital_id)
+    
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email, "role": user.role},
-        expires_delta=access_token_expires,
+        expires_delta=access_token_expires
     )
-
+    
     return Token(
         access_token=access_token,
         token_type="bearer",
         expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         user=User(**user.dict()),
+        hospital=hospital
     )
-
 
 @app.get("/users/me", response_model=User)
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 
-# =========================
-# REGISTRY ROUTES
-# =========================
-
-@app.get("/hospitals", response_model=List[Facility])
-async def list_facilities(
-    region_id: Optional[str] = None,
-    facility_type: Optional[str] = None,
-    level: Optional[str] = None,
-    ownership: Optional[str] = None,
-    search: Optional[str] = None,
-):
-    """
-    List all public health facilities in Burkina Faso.
-    Optional filters:
-    - region_id
-    - facility_type (CHU, CHR, CMA, CSPS, ...)
-    - level (primary, secondary, tertiary)
-    - ownership (public, private, faith-based)
-    - search (name contains, case-insensitive)
-    """
-    registry = load_registry()
-    facilities = flatten_facilities(registry)
-
-    if region_id:
-        region_ids = {r.region_id for r in registry.regions if r.region_id == region_id}
-        facilities = [
-            f
-            for r in registry.regions
-            if r.region_id in region_ids
-            for f in r.facilities
-        ]
-
-    if facility_type:
-        facilities = [f for f in facilities if f.type.lower() == facility_type.lower()]
-
-    if level:
-        facilities = [
-            f for f in facilities
-            if f.level and f.level.lower() == level.lower()
-        ]
-
-    if ownership:
-        facilities = [
-            f for f in facilities
-            if f.ownership and f.ownership.lower() == ownership.lower()
-        ]
-
-    if search:
-        s = search.lower()
-        facilities = [
-            f for f in facilities
-            if s in f.name.lower() or (f.city and s in f.city.lower())
-        ]
-
-    return facilities
-
-
-@app.get("/hospitals/regions", response_model=List[Region])
-async def list_regions():
-    """
-    List regions with their facilities.
-    """
-    registry = load_registry()
-    return registry.regions
-
-
-@app.get("/hospitals/{facility_id}", response_model=Facility)
-async def get_facility(facility_id: str):
-    """
-    Get a single facility by its ID (e.g., BF-CHU-TENG).
-    """
-    facility = get_facility_by_id(facility_id)
-    if not facility:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Facility '{facility_id}' not found",
-        )
-    return facility
-
-# =========================
-# MAIN ENTRYPOINT
-# =========================
-
 if __name__ == "__main__":
     import uvicorn
-
-    logger.info("=" * 60)
-    logger.info("DANAYA Auth & Registry Service Starting")
-    logger.info("Danaya (Dioula) = Trust")
-    logger.info(f"Users in demo DB: {len(fake_users_db)}")
-    logger.info(f"Registry path: {REGISTRY_PATH}")
-    logger.info("=" * 60)
-
+    logger.info("=" * 70)
+    logger.info("DANAYA Authentication Service Starting")
+    logger.info("Danaya (Dioula) = Trust | Building trust through zero-trust")
+    logger.info(f"Registered users: {len(fake_users_db)}")
+    logger.info("Demo: doctor@chu-ouaga.bf / Doctor123!")
+    logger.info("=" * 70)
     uvicorn.run(app, host="0.0.0.0", port=8001, log_level="info")

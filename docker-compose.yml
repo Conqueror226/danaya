@@ -1,4 +1,3 @@
-version: '3.9'
 
 services:
   # PostgreSQL Database
@@ -7,12 +6,13 @@ services:
     container_name: danaya-postgres
     environment:
       POSTGRES_USER: danaya
-      POSTGRES_PASSWORD: danaya_dev_2025
+      POSTGRES_PASSWORD: danaya_secure_2025
       POSTGRES_DB: danaya_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U danaya"]
       interval: 10s
@@ -20,6 +20,7 @@ services:
       retries: 5
     networks:
       - danaya-network
+    restart: unless-stopped
 
   # Redis Cache
   redis:
@@ -29,11 +30,36 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass danaya_redis_2025
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     networks:
       - danaya-network
+    restart: unless-stopped
 
-  # Auth Service
+  # Hospital Registry Service
+  registry:
+    build:
+      context: ./backend/registry
+      dockerfile: Dockerfile
+    container_name: danaya-registry
+    ports:
+      - "8003:8003"
+    environment:
+      - ENVIRONMENT=production
+    networks:
+      - danaya-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Authentication Service
   auth-service:
     build:
       context: ./backend/auth-service
@@ -42,22 +68,98 @@ services:
     ports:
       - "8001:8001"
     environment:
-      JWT_SECRET: ministry-demo-secret-2025
-      DATABASE_URL: postgresql://danaya:danaya_dev_2025@postgres:5432/danaya_db
-      REDIS_URL: redis://redis:6379/0
-      ENVIRONMENT: demo
+      JWT_SECRET: ${JWT_SECRET:-ministry-demo-secret-2025}
+      DATABASE_URL: postgresql://danaya:danaya_secure_2025@postgres:5432/danaya_db
+      REDIS_URL: redis://:danaya_redis_2025@redis:6379/0
+      REGISTRY_URL: http://registry:8003
+      ENVIRONMENT: production
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      registry:
         condition: service_started
+    networks:
+      - danaya-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Patient Service
+  patient-service:
+    build:
+      context: ./backend/patient-service
+      dockerfile: Dockerfile
+    container_name: danaya-patient
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: postgresql://danaya:danaya_secure_2025@postgres:5432/danaya_db
+      REDIS_URL: redis://:danaya_redis_2025@redis:6379/0
+      ENVIRONMENT: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - danaya-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: ./frontend/staff-portal
+      dockerfile: Dockerfile
+    container_name: danaya-frontend
+    ports:
+      - "3000:80"
+    environment:
+      REACT_APP_API_URL: http://localhost:8001
+      REACT_APP_PATIENT_API_URL: http://localhost:8002
+      REACT_APP_REGISTRY_API_URL: http://localhost:8003
+      REACT_APP_PLATFORM_NAME: DANAYA
+    depends_on:
+      - auth-service
+      - patient-service
+      - registry
+    networks:
+      - danaya-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy (Optional - for production)
+  nginx:
+    image: nginx:alpine
+    container_name: danaya-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - auth-service
+      - patient-service
+      - registry
     networks:
       - danaya-network
     restart: unless-stopped
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
 
 networks:
   danaya-network:

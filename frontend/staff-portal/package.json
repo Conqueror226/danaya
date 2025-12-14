@@ -2,6 +2,7 @@
   "name": "danaya-staff-portal",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://localhost:8001",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -19,6 +20,5 @@
   "browserslist": {
     "production": [">0.2%", "not dead", "not op_mini all"],
     "development": ["last 1 chrome version"]
-  },
-  "proxy": "http://localhost:8001"
+  }
 }
