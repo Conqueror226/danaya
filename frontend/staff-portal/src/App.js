@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import "./App.css";
 
-// Role-based permissions
+// Permissions basées sur les rôles
 const PERMISSIONS = {
   doctor: {
     canViewPatients: true,
@@ -12,8 +12,8 @@ const PERMISSIONS = {
     canWritePrescriptions: true,
     canViewAppointments: true,
     canManageAppointments: true,
-    canAccessTelemedicine: true,
     canViewSettings: true,
+    canAccessTelemedicine: true,
   },
   nurse: {
     canViewPatients: true,
@@ -23,8 +23,8 @@ const PERMISSIONS = {
     canWritePrescriptions: false,
     canViewAppointments: true,
     canManageAppointments: true,
-    canAccessTelemedicine: true,
     canViewSettings: false,
+    canAccessTelemedicine: true,
   },
   pharmacist: {
     canViewPatients: false,
@@ -35,6 +35,7 @@ const PERMISSIONS = {
     canViewAppointments: false,
     canManageAppointments: false,
     canViewSettings: false,
+    canAccessTelemedicine: false,
   },
   lab_tech: {
     canViewPatients: true,
@@ -45,6 +46,7 @@ const PERMISSIONS = {
     canViewAppointments: false,
     canManageAppointments: false,
     canViewSettings: false,
+    canAccessTelemedicine: false,
   },
   admin: {
     canViewPatients: true,
@@ -55,6 +57,7 @@ const PERMISSIONS = {
     canViewAppointments: true,
     canManageAppointments: true,
     canViewSettings: true,
+    canAccessTelemedicine: true,
   },
 };
 
@@ -67,7 +70,7 @@ function App() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Get permissions for current user
+  // Obtenir les permissions pour l'utilisateur actuel
   const permissions = user ? PERMISSIONS[user.role] || {} : {};
 
   const handleLogin = async (e) => {
@@ -90,7 +93,7 @@ function App() {
       localStorage.setItem("danaya_hospital", JSON.stringify(res.data.hospital));
       setActivePage("dashboard");
     } catch (err) {
-      console.error("Login error:", err);
+      console.error("Erreur de connexion:", err);
       setError("Email ou mot de passe incorrect");
     } finally {
       setLoading(false);
@@ -105,7 +108,7 @@ function App() {
     setActivePage("dashboard");
   };
 
-  // Check if user can access a page
+  // Vérifier si l'utilisateur peut accéder à une page
   const canAccessPage = (page) => {
     switch (page) {
       case "patients":
@@ -118,27 +121,29 @@ function App() {
         return permissions.canViewPrescriptions;
       case "settings":
         return permissions.canViewSettings;
+      case "telemedicine":
+        return permissions.canAccessTelemedicine;
       default:
         return true;
     }
   };
 
-  // ---------- PAGE CONTENT ----------
+  // ---------- CONTENU DES PAGES ----------
 
   const renderPageContent = () => {
     if (!user) return null;
 
-    // Check access
+    // Vérifier l'accès
     if (!canAccessPage(activePage)) {
       return (
         <div className="page">
-          <h2 className="page-title">Access Denied</h2>
+          <h2 className="page-title">Accès Refusé</h2>
           <p className="page-subtitle">
-            You don't have permission to access this page.
+            Vous n'avez pas la permission d'accéder à cette page.
           </p>
           <div className="access-denied-box">
-            <p>🚫 Your role ({user.role}) does not have access to this feature.</p>
-            <p>Contact your administrator if you need access.</p>
+            <p>🚫 Votre rôle ({user.role}) n'a pas accès à cette fonctionnalité.</p>
+            <p>Contactez votre administrateur si vous avez besoin d'accès.</p>
           </div>
         </div>
       );
@@ -148,63 +153,64 @@ function App() {
       case "dashboard":
         return (
           <div className="page">
-            <h2 className="page-title">Dashboard</h2>
+            <h2 className="page-title">Tableau de Bord</h2>
             <p className="page-subtitle">
-              Welcome, <strong>{user.full_name}</strong> ({user.role}).
+              Bienvenue, <strong>{user.full_name}</strong> ({user.role}).
             </p>
 
             <div className="cards-grid">
               <div className="info-card">
-                <h3>User Information</h3>
+                <h3>Informations Utilisateur</h3>
                 <p>
                   <strong>Email:</strong> {user.email}
                 </p>
                 <p>
-                  <strong>Role:</strong> <span className="role-badge">{user.role}</span>
+                  <strong>Rôle:</strong> <span className="role-badge">{user.role}</span>
                 </p>
                 <p>
-                  <strong>Department:</strong> {user.department || "N/A"}
+                  <strong>Département:</strong> {user.department || "N/A"}
                 </p>
               </div>
 
               {hospital && (
                 <div className="info-card">
-                  <h3>Hospital Information</h3>
+                  <h3>Informations Hôpital</h3>
                   <p>
-                    <strong>Name:</strong> {hospital.name}
+                    <strong>Nom:</strong> {hospital.name}
                   </p>
                   <p>
                     <strong>Type:</strong> {hospital.type} ({hospital.level})
                   </p>
                   <p>
-                    <strong>Region:</strong> {hospital.region_name}
+                    <strong>Région:</strong> {hospital.region_name}
                   </p>
                   <p>
-                    <strong>City:</strong> {hospital.city}
+                    <strong>Ville:</strong> {hospital.city}
                   </p>
                 </div>
               )}
 
               <div className="info-card">
-                <h3>Your Permissions</h3>
+                <h3>Vos Permissions</h3>
                 <ul className="list">
-                  {permissions.canViewPatients && <li>✅ View Patients</li>}
-                  {permissions.canEditPatients && <li>✅ Edit Patients</li>}
-                  {permissions.canViewLabs && <li>✅ View Lab Results</li>}
-                  {permissions.canViewPrescriptions && <li>✅ View Prescriptions</li>}
-                  {permissions.canWritePrescriptions && <li>✅ Write Prescriptions</li>}
-                  {permissions.canManageAppointments && <li>✅ Manage Appointments</li>}
-                  {permissions.canViewSettings && <li>✅ System Settings</li>}
+                  {permissions.canViewPatients && <li>✅ Consulter les patients</li>}
+                  {permissions.canEditPatients && <li>✅ Modifier les patients</li>}
+                  {permissions.canViewLabs && <li>✅ Voir les résultats de laboratoire</li>}
+                  {permissions.canViewPrescriptions && <li>✅ Voir les ordonnances</li>}
+                  {permissions.canWritePrescriptions && <li>✅ Rédiger des ordonnances</li>}
+                  {permissions.canManageAppointments && <li>✅ Gérer les rendez-vous</li>}
+                  {permissions.canViewSettings && <li>✅ Paramètres système</li>}
+                  {permissions.canAccessTelemedicine && <li>✅ Télémédecine</li>}
                 </ul>
               </div>
 
               <div className="info-card">
-                <h3>Security & Access</h3>
+                <h3>Sécurité & Accès</h3>
                 <ul className="list">
-                  <li>✅ Zero-trust architecture</li>
-                  <li>✅ Role-based access control</li>
-                  <li>✅ Audit logging enabled</li>
-                  <li>🔐 Session expires in 30min</li>
+                  <li>✅ Architecture zéro-confiance</li>
+                  <li>✅ Contrôle d'accès basé sur les rôles</li>
+                  <li>✅ Journalisation d'audit activée</li>
+                  <li>🔐 Session expire dans 30min</li>
                 </ul>
               </div>
             </div>
@@ -216,8 +222,8 @@ function App() {
           <div className="page">
             <h2 className="page-title">Patients</h2>
             <p className="page-subtitle">
-              Patient records for {hospital ? hospital.name : "your hospital"}.
-              {!permissions.canEditPatients && " (Read-only access)"}
+              Dossiers des patients pour {hospital ? hospital.name : "votre hôpital"}.
+              {!permissions.canEditPatients && " (Accès lecture seule)"}
             </p>
             <div className="table-wrapper">
               <table className="simple-table">
@@ -225,9 +231,9 @@ function App() {
                   <tr>
                     <th>Patient</th>
                     <th>NHID</th>
-                    <th>Age</th>
-                    <th>Gender</th>
-                    <th>Phone</th>
+                    <th>Âge</th>
+                    <th>Sexe</th>
+                    <th>Téléphone</th>
                     {permissions.canEditPatients && <th>Actions</th>}
                   </tr>
                 </thead>
@@ -239,7 +245,7 @@ function App() {
                     <td>F</td>
                     <td>+226 70 12 34 56</td>
                     {permissions.canEditPatients && (
-                      <td><button className="btn-small">Edit</button></td>
+                      <td><button className="btn-small">Modifier</button></td>
                     )}
                   </tr>
                   <tr>
@@ -249,7 +255,7 @@ function App() {
                     <td>M</td>
                     <td>+226 76 55 44 33</td>
                     {permissions.canEditPatients && (
-                      <td><button className="btn-small">Edit</button></td>
+                      <td><button className="btn-small">Modifier</button></td>
                     )}
                   </tr>
                   <tr>
@@ -259,7 +265,7 @@ function App() {
                     <td>F</td>
                     <td>+226 72 88 99 00</td>
                     {permissions.canEditPatients && (
-                      <td><button className="btn-small">Edit</button></td>
+                      <td><button className="btn-small">Modifier</button></td>
                     )}
                   </tr>
                 </tbody>
@@ -271,15 +277,15 @@ function App() {
       case "appointments":
         return (
           <div className="page">
-            <h2 className="page-title">Appointments</h2>
+            <h2 className="page-title">Rendez-vous</h2>
             <p className="page-subtitle">
               {permissions.canManageAppointments
-                ? "Manage patient appointments and schedules."
-                : "View patient appointments (read-only)."}
+                ? "Gérer les rendez-vous et plannings des patients."
+                : "Consulter les rendez-vous des patients (lecture seule)."}
             </p>
             <p className="placeholder-box">
-              📅 Appointment management system coming soon.
-              {permissions.canManageAppointments && " You can create and edit appointments."}
+              📅 Système de gestion des rendez-vous à venir.
+              {permissions.canManageAppointments && " Vous pourrez créer et modifier les rendez-vous."}
             </p>
           </div>
         );
@@ -287,14 +293,14 @@ function App() {
       case "labs":
         return (
           <div className="page">
-            <h2 className="page-title">Lab Results</h2>
-            <p className="page-subtitle">Laboratory test results and imaging reports.</p>
+            <h2 className="page-title">Résultats de Laboratoire</h2>
+            <p className="page-subtitle">Résultats d'analyses et rapports d'imagerie.</p>
             <div className="info-card">
-              <h3>Recent Lab Tests</h3>
+              <h3>Analyses Récentes</h3>
               <ul className="list">
-                <li>🧪 Blood Test - Zongo Awa (Pending)</li>
-                <li>🧪 X-Ray - Ouedraogo Salif (Completed)</li>
-                <li>🧪 COVID-19 Test - Sawadogo Mariam (Completed)</li>
+                <li>🧪 Analyse de sang - Zongo Awa (En attente)</li>
+                <li>🧪 Radiographie - Ouedraogo Salif (Terminé)</li>
+                <li>🧪 Test COVID-19 - Sawadogo Mariam (Terminé)</li>
               </ul>
             </div>
           </div>
@@ -303,128 +309,129 @@ function App() {
       case "prescriptions":
         return (
           <div className="page">
-            <h2 className="page-title">Prescriptions</h2>
+            <h2 className="page-title">Ordonnances</h2>
             <p className="page-subtitle">
               {permissions.canWritePrescriptions
-                ? "Create and manage electronic prescriptions."
-                : "View prescriptions (read-only access)."}
+                ? "Créer et gérer les ordonnances électroniques."
+                : "Consulter les ordonnances (accès lecture seule)."}
             </p>
             <div className="info-card">
-              <h3>Recent Prescriptions</h3>
+              <h3>Ordonnances Récentes</h3>
               <ul className="list">
-                <li>💊 Paracetamol 500mg - Zongo Awa</li>
-                <li>💊 Amoxicillin 250mg - Ouedraogo Salif</li>
-                <li>💊 Ibuprofen 400mg - Sawadogo Mariam</li>
+                <li>💊 Paracétamol 500mg - Zongo Awa</li>
+                <li>💊 Amoxicilline 250mg - Ouedraogo Salif</li>
+                <li>💊 Ibuprofène 400mg - Sawadogo Mariam</li>
               </ul>
               {permissions.canWritePrescriptions && (
                 <button className="btn-primary" style={{marginTop: "20px"}}>
-                  ➕ New Prescription
+                  ➕ Nouvelle Ordonnance
                 </button>
               )}
             </div>
           </div>
         );
-	case "telemedicine":
-  return (
-    <div className="page">
-      <h2 className="page-title">Télémédecine</h2>
-      <p className="page-subtitle">
-        Consultations à distance et collaboration inter-hospitalière.
-      </p>
 
-      <div className="cards-grid">
-        <div className="info-card telemedicine-card">
-          <h3>📹 Consultations Vidéo</h3>
-          <p>Consultations en temps réel avec des patients distants</p>
-          <ul className="list">
-            <li>✅ Chiffrement end-to-end</li>
-            <li>✅ Enregistrement sécurisé</li>
-            <li>✅ Partage d'écran</li>
-          </ul>
-          <button className="btn-primary" disabled style={{marginTop: "16px"}}>
-            🚧 Coming Soon
-          </button>
-        </div>
+      case "telemedicine":
+        return (
+          <div className="page">
+            <h2 className="page-title">Télémédecine</h2>
+            <p className="page-subtitle">
+              Consultations à distance et collaboration inter-hospitalière.
+            </p>
 
-        <div className="info-card telemedicine-card">
-          <h3>🏥 Références Inter-Hôpitaux</h3>
-          <p>Transfert de patients entre CSPS → CMA → CHR → CHU</p>
-          <ul className="list">
-            <li>📤 Envoi de dossiers</li>
-            <li>📥 Réception de cas</li>
-            <li>💬 Chat médical sécurisé</li>
-          </ul>
-          <button className="btn-primary" disabled style={{marginTop: "16px"}}>
-            �� Coming Soon
-          </button>
-        </div>
+            <div className="cards-grid">
+              <div className="info-card telemedicine-card">
+                <h3>📹 Consultations Vidéo</h3>
+                <p>Consultations en temps réel avec des patients distants</p>
+                <ul className="list">
+                  <li>✅ Chiffrement de bout en bout</li>
+                  <li>✅ Enregistrement sécurisé</li>
+                  <li>✅ Partage d'écran</li>
+                </ul>
+                <button className="btn-primary" disabled style={{marginTop: "16px"}}>
+                  🚧 Bientôt disponible
+                </button>
+              </div>
 
-        <div className="info-card telemedicine-card">
-          <h3>🎓 Formation Continue</h3>
-          <p>Webinaires et sessions de formation</p>
-          <ul className="list">
-            <li>📚 Bibliothèque médicale</li>
-            <li>🎥 Vidéos éducatives</li>
-            <li>📊 Partage de cas cliniques</li>
-          </ul>
-          <button className="btn-primary" disabled style={{marginTop: "16px"}}>
-            🚧 Coming Soon
-          </button>
-        </div>
+              <div className="info-card telemedicine-card">
+                <h3>🏥 Références Inter-Hôpitaux</h3>
+                <p>Transfert de patients entre CSPS → CMA → CHR → CHU</p>
+                <ul className="list">
+                  <li>📤 Envoi de dossiers</li>
+                  <li>📥 Réception de cas</li>
+                  <li>💬 Chat médical sécurisé</li>
+                </ul>
+                <button className="btn-primary" disabled style={{marginTop: "16px"}}>
+                  🚧 Bientôt disponible
+                </button>
+              </div>
 
-        <div className="info-card telemedicine-card">
-          <h3>🚑 Urgences à Distance</h3>
-          <p>Support en temps réel pour les urgences</p>
-          <ul className="list">
-            <li>⚡ Triage à distance</li>
-            <li>🩺 Guidance procédurale</li>
-            <li>📞 Ligne directe CHU</li>
-          </ul>
-          <button className="btn-primary" disabled style={{marginTop: "16px"}}>
-            🚧 Coming Soon
-          </button>
-        </div>
-      </div>
+              <div className="info-card telemedicine-card">
+                <h3>🎓 Formation Continue</h3>
+                <p>Webinaires et sessions de formation</p>
+                <ul className="list">
+                  <li>📚 Bibliothèque médicale</li>
+                  <li>🎥 Vidéos éducatives</li>
+                  <li>📊 Partage de cas cliniques</li>
+                </ul>
+                <button className="btn-primary" disabled style={{marginTop: "16px"}}>
+                  🚧 Bientôt disponible
+                </button>
+              </div>
 
-      <div className="info-card" style={{marginTop: "24px"}}>
-        <h3>🔮 Roadmap Télémédecine</h3>
-        <div className="roadmap-timeline">
-          <div className="roadmap-item">
-            <div className="roadmap-quarter">Q1 2026</div>
-            <div className="roadmap-feature">Infrastructure WebRTC/Core platform completion</div>
+              <div className="info-card telemedicine-card">
+                <h3>🚑 Urgences à Distance</h3>
+                <p>Support en temps réel pour les urgences</p>
+                <ul className="list">
+                  <li>⚡ Triage à distance</li>
+                  <li>🩺 Guidance procédurale</li>
+                  <li>📞 Ligne directe CHU</li>
+                </ul>
+                <button className="btn-primary" disabled style={{marginTop: "16px"}}>
+                  🚧 Bientôt disponible
+                </button>
+              </div>
+            </div>
+
+            <div className="info-card" style={{marginTop: "24px"}}>
+              <h3>🔮 Feuille de Route Télémédecine</h3>
+              <div className="roadmap-timeline">
+                <div className="roadmap-item">
+                  <div className="roadmap-quarter">T1 2026</div>
+                  <div className="roadmap-feature">Achèvement plateforme de base</div>
+                </div>
+                <div className="roadmap-item">
+                  <div className="roadmap-quarter">T2 2026</div>
+                  <div className="roadmap-feature">Pilote télémédecine (3 hôpitaux)</div>
+                </div>
+                <div className="roadmap-item">
+                  <div className="roadmap-quarter">T3 2026</div>
+                  <div className="roadmap-feature">Déploiement régional (10 sites)</div>
+                </div>
+                <div className="roadmap-item">
+                  <div className="roadmap-quarter">T4 2026</div>
+                  <div className="roadmap-feature">Déploiement national (180+ sites)</div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="roadmap-item">
-            <div className="roadmap-quarter">Q2 2026</div>
-            <div className="roadmap-feature">Consultations vidéo pilote/Telemedicine pilot (3 hôpitaux)</div>
-          </div>
-          <div className="roadmap-item">
-            <div className="roadmap-quarter">Q3 2026</div>
-            <div className="roadmap-feature">Système de référence inter-niveaux/Déploiement régional (10 sites)</div>
-          </div>
-          <div className="roadmap-item">
-            <div className="roadmap-quarter">Q4 2026</div>
-            <div className="roadmap-feature">Déploiement national/(180+ sites)</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+        );
 
       case "settings":
         return (
           <div className="page">
-            <h2 className="page-title">Settings</h2>
-            <p className="page-subtitle">System configuration and user management.</p>
+            <h2 className="page-title">Paramètres</h2>
+            <p className="page-subtitle">Configuration système et gestion des utilisateurs.</p>
             <div className="cards-grid">
               <div className="info-card">
-                <h3>User Management</h3>
-                <p>Add, edit, or remove users</p>
-                <button className="btn-primary">Manage Users</button>
+                <h3>Gestion des Utilisateurs</h3>
+                <p>Ajouter, modifier ou supprimer des utilisateurs</p>
+                <button className="btn-primary">Gérer les Utilisateurs</button>
               </div>
               <div className="info-card">
-                <h3>System Settings</h3>
-                <p>Configure platform settings</p>
-                <button className="btn-primary">Configure</button>
+                <h3>Paramètres Système</h3>
+                <p>Configurer les paramètres de la plateforme</p>
+                <button className="btn-primary">Configurer</button>
               </div>
             </div>
           </div>
@@ -435,7 +442,7 @@ function App() {
     }
   };
 
-  // ---------- LAYOUT WITH SIDEBAR ----------
+  // ---------- INTERFACE AVEC BARRE LATÉRALE ----------
 
   if (user) {
     return (
@@ -443,10 +450,10 @@ function App() {
         <aside className="sidebar">
           <div className="sidebar-header">
             <div className="sidebar-logo">DANAYA</div>
-            <div className="sidebar-subtitle">National Health Platform</div>
+            <div className="sidebar-subtitle">Plateforme Nationale de Santé</div>
           </div>
 
-          {/* Hospital Info */}
+          {/* Informations Hôpital */}
           {hospital && (
             <div className="sidebar-hospital">
               <div
@@ -464,7 +471,7 @@ function App() {
             </div>
           )}
 
-          {/* User Info */}
+          {/* Informations Utilisateur */}
           <div className="sidebar-user">
             <div className="avatar-circle">{user.full_name?.charAt(0) || "U"}</div>
             <div>
@@ -476,13 +483,13 @@ function App() {
             </div>
           </div>
 
-          {/* Navigation - Only show pages user can access */}
+          {/* Navigation - Afficher uniquement les pages accessibles */}
           <nav className="sidebar-nav">
             <button
               className={activePage === "dashboard" ? "nav-item nav-item-active" : "nav-item"}
               onClick={() => setActivePage("dashboard")}
             >
-              🏠 Dashboard
+              🏠 Tableau de Bord
             </button>
 
             {permissions.canViewPatients && (
@@ -499,7 +506,7 @@ function App() {
                 className={activePage === "appointments" ? "nav-item nav-item-active" : "nav-item"}
                 onClick={() => setActivePage("appointments")}
               >
-                📅 Appointments
+                📅 Rendez-vous
               </button>
             )}
 
@@ -508,7 +515,7 @@ function App() {
                 className={activePage === "labs" ? "nav-item nav-item-active" : "nav-item"}
                 onClick={() => setActivePage("labs")}
               >
-                🧪 Lab Results
+                🧪 Laboratoire
               </button>
             )}
 
@@ -517,33 +524,34 @@ function App() {
                 className={activePage === "prescriptions" ? "nav-item nav-item-active" : "nav-item"}
                 onClick={() => setActivePage("prescriptions")}
               >
-                💊 Prescriptions
+                💊 Ordonnances
               </button>
             )}
-	    {permissions.canAccessTelemedicine && (
-  	      <button
-    		className={activePage === "telemedicine" ? "nav-item nav-item-active" : "nav-item"}
-    		onClick={() => setActivePage("telemedicine")}
-  	      >
-    		📹 Télémédecine
-  	      </button>
-	    )}
+
+            {permissions.canAccessTelemedicine && (
+              <button
+                className={activePage === "telemedicine" ? "nav-item nav-item-active" : "nav-item"}
+                onClick={() => setActivePage("telemedicine")}
+              >
+                📹 Télémédecine
+              </button>
+            )}
 
             {permissions.canViewSettings && (
               <button
                 className={activePage === "settings" ? "nav-item nav-item-active" : "nav-item"}
                 onClick={() => setActivePage("settings")}
               >
-                ⚙️ Settings
+                ⚙️ Paramètres
               </button>
             )}
           </nav>
 
-          {/* Footer */}
+          {/* Pied de page */}
           <div className="sidebar-footer">
-            <div className="sidebar-footer-text">Danaya ka kɛnɛya – Trust in health</div>
+            <div className="sidebar-footer-text">Danaya ka kɛnɛya – La confiance en santé</div>
             <button className="btn-secondary btn-logout" onClick={handleLogout}>
-              Log out
+              Déconnexion
             </button>
           </div>
         </aside>
@@ -553,7 +561,7 @@ function App() {
     );
   }
 
-  // ---------- LOGIN PAGE ----------
+  // ---------- PAGE DE CONNEXION ----------
 
   return (
     <div className="App">
@@ -562,7 +570,7 @@ function App() {
           <div className="logo-section">
             <h1>DANAYA</h1>
             <p className="subtitle">Plateforme Nationale de Santé du Burkina Faso</p>
-            <p className="tagline">Building trust through zero-trust security</p>
+            <p className="tagline">Bâtir la confiance par l'architecture zéro-confiance</p>
           </div>
 
           <form onSubmit={handleLogin}>
@@ -600,7 +608,7 @@ function App() {
 
           <div className="demo-credentials">
             <p>
-              <strong>🎭 Test Different Roles:</strong>
+              <strong>🎭 Tester Différents Rôles:</strong>
             </p>
             <p>
               👨‍⚕️ <code>doctor@chu-ouaga.bf</code> / <code>Doctor123!</code>
@@ -614,8 +622,8 @@ function App() {
           </div>
 
           <div className="security-badge">
-            <p>🛡️ Role-Based Access Control (RBAC)</p>
-            <p>🔐 Zero-Trust Security | 🔑 JWT Tokens</p>
+            <p>🛡️ Contrôle d'Accès Basé sur les Rôles (RBAC)</p>
+            <p>🔐 Sécurité Zéro-Confiance | 🔑 Jetons JWT</p>
           </div>
 
           <footer className="login-footer">
