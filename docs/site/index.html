@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DANAYA - National Health Platform for Burkina Faso</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <h1>🏥 DANAYA</h1>
+                <p>Trust in Health | Danaya ka kɛnɛya</p>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#problem">Problem</a></li>
+                <li><a href="#solution">Solution</a></li>
+                <li><a href="#japanese">Japanese Principles</a></li>
+                <li><a href="#vision">Vision</a></li>
+                <li><a href="#demo">Demo</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">DANAYA</h1>
+                <h2 class="hero-subtitle">National Health Platform for Burkina Faso</h2>
+                <p class="hero-description">
+                    Applying Japanese Technology & Collaborative Spirit to Solve Healthcare Challenges
+                </p>
+                <div class="flags">
+                    <span class="flag">🇧🇫 Burkina Faso</span>
+                    <span class="connector">+</span>
+                    <span class="flag">🇯🇵 Japan</span>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-number">180+</div>
+                        <div class="stat-label">Healthcare Facilities</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">13</div>
+                        <div class="stat-label">Regions</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">~10,000</div>
+                        <div class="stat-label">Lines of Code</div>
+                    </div>
+                </div>
+                <a href="#problem" class="cta-button">Learn More ↓</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section id="problem" class="section">
+        <div class="container">
+            <h2 class="section-title">The Problem</h2>
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <div class="problem-icon">📄</div>
+                    <h3>Paper Records</h3>
+                    <p>90% of facilities use paper, leading to lost medical histories and repeated tests</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">🚫</div>
+                    <h3>No Communication</h3>
+                    <p>Rural CSPS cannot consult CHU specialists, delays in critical care</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">💰</div>
+                    <h3>High Costs</h3>
+                    <p>Repeated tests, inefficient transfers, preventable complications</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">⚠️</div>
+                    <h3>Lives at Risk</h3>
+                    <p>24+ hour delays in emergency transfers, no coordination</p>
+                </div>
+            </div>
+            
+            <div class="real-story">
+                <h3>Real Impact: CHR Dori Scenario</h3>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker">⏰</div>
+                        <div class="timeline-content">
+                            <h4>Without DANAYA: 24+ Hours</h4>
+                            <p>Rural CSPS → CHR Dori (no alert, 3hr wait) → CHU Ouaga (unprepared)</p>
+                            <span class="timeline-outcome bad">⚠️ Critical delays, high risk</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker">✅</div>
+                        <div class="timeline-content">
+                            <h4>With DANAYA: 6 Hours</h4>
+                            <p>Digital alert → CHR prepared → CHU ICU ready</p>
+                            <span class="timeline-outcome good">✅ Optimal care, life saved</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section id="solution" class="section dark">
+        <div class="container">
+            <h2 class="section-title">The Solution: DANAYA</h2>
+            <p class="section-intro">Zero-trust architecture platform optimized for resource-constrained environments</p>
+            
+            <div class="architecture">
+                <h3>System Architecture</h3>
+                <div class="architecture-diagram">
+                    <div class="arch-layer">
+                        <div class="arch-box frontend">Frontend (React)<br/>French UI</div>
+                    </div>
+                    <div class="arch-layer">
+                        <div class="arch-box gateway">API Gateway (Nginx)</div>
+                    </div>
+                    <div class="arch-layer services">
+                        <div class="arch-box service">Auth Service<br/>Port 8001</div>
+                        <div class="arch-box service">Patient Service<br/>Port 8002</div>
+                        <div class="arch-box service">Registry Service<br/>Port 8003</div>
+                    </div>
+                    <div class="arch-layer">
+                        <div class="arch-box database">PostgreSQL + Redis</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="features">
+                <h3>Key Features</h3>
+                <div class="features-grid">
+                    <div class="feature">
+                        <span class="feature-icon">🔐</span>
+                        <h4>Zero-Trust Security</h4>
+                        <p>JWT authentication, RBAC, hospital-level isolation</p>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">🏥</span>
+                        <h4>Hospital-Aware</h4>
+                        <p>Each facility has unique branding and data isolation</p>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">👥</span>
+                        <h4>5 Medical Roles</h4>
+                        <p>Doctor, Nurse, Pharmacist, Lab Tech, Admin</p>
+                    </div>
+                    <div class="feature">
+                        <span class="feature-icon">📱</span>
+                        <h4>Offline-Ready</h4>
+                        <p>Works with intermittent connectivity</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Japanese Principles Section -->
+    <section id="japanese" class="section">
+        <div class="container">
+            <h2 class="section-title">Japanese Principles Applied</h2>
+            <div class="principles">
+                <div class="principle">
+                    <div class="principle-header">
+                        <span class="kanji">改善</span>
+                        <h3>Kaizen</h3>
+                    </div>
+                    <p>Continuous Improvement</p>
+                    <ul>
+                        <li>Start small (3 hospitals)</li>
+                        <li>Learn and adapt</li>
+                        <li>Scale gradually (180 facilities)</li>
+                    </ul>
+                </div>
+                <div class="principle">
+                    <div class="principle-header">
+                        <span class="kanji">物作り</span>
+                        <h3>Monozukuri</h3>
+                    </div>
+                    <p>Craftsmanship in Making</p>
+                    <ul>
+                        <li>Quality code</li>
+                        <li>Thoughtful design</li>
+                        <li>Documentation</li>
+                    </ul>
+                </div>
+                <div class="principle">
+                    <div class="principle-header">
+                        <span class="kanji">おもてなし</span>
+                        <h3>Omotenashi</h3>
+                    </div>
+                    <p>Hospitality & User Focus</p>
+                    <ul>
+                        <li>100% French interface</li>
+                        <li>Intuitive design</li>
+                        <li>Anticipate needs</li>
+                    </ul>
+                </div>
+                <div class="principle">
+                    <div class="principle-header">
+                        <span class="kanji">和</span>
+                        <h3>Wa</h3>
+                    </div>
+                    <p>Harmony & Collaboration</p>
+                    <ul>
+                        <li>Unite 180 facilities</li>
+                        <li>Share knowledge</li>
+                        <li>Collective benefit</li>
+                    </ul>
+                </div>
+                <div class="principle">
+                    <div class="principle-header">
+                        <span class="kanji">頑張る</span>
+                        <h3>Ganbaru</h3>
+                    </div>
+                    <p>Persistence</p>
+                    <ul>
+                        <li>Long-term commitment</li>
+                        <li>Not giving up</li>
+                        <li>Life's work, not school project</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vision Timeline -->
+    <section id="vision" class="section dark">
+        <div class="container">
+            <h2 class="section-title">5-Year Vision</h2>
+            <div class="vision-timeline">
+                <div class="vision-year">
+                    <div class="year">2025</div>
+                    <h3>Prototype</h3>
+                    <ul>
+                        <li>✅ 3 Services Built</li>
+                        <li>✅ French UI Complete</li>
+                        <li>✅ Docker Deployment</li>
+                    </ul>
+                </div>
+                <div class="vision-year">
+                    <div class="year">2026</div>
+                    <h3>Pilot</h3>
+                    <ul>
+                        <li>🏥 3 Hospitals</li>
+                        <li>✅ CHR Dori Focus</li>
+                        <li>✅ Ministry Approval</li>
+                    </ul>
+                </div>
+                <div class="vision-year">
+                    <div class="year">2027</div>
+                    <h3>Regional</h3>
+                    <ul>
+                        <li>🏥 10 Facilities</li>
+                        <li>📹 Telemedicine</li>
+                        <li>�� Mobile App</li>
+                    </ul>
+                </div>
+                <div class="vision-year">
+                    <div class="year">2028</div>
+                    <h3>National</h3>
+                    <ul>
+                        <li>�� 50 Facilities</li>
+                        <li>�� AI Triage</li>
+                        <li>📊 Analytics</li>
+                    </ul>
+                </div>
+                <div class="vision-year">
+                    <div class="year">2029-2030</div>
+                    <h3>Regional Leader</h3>
+                    <ul>
+                        <li>🏥 180 Facilities</li>
+                        <li>🌍 West Africa</li>
+                        <li>🔬 Research Hub</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="section">
+        <div class="container">
+            <h2 class="section-title">Live Demo</h2>
+            <div class="demo-info">
+                <p class="demo-intro">The platform is fully functional and ready for demonstration</p>
+                <div class="demo-accounts">
+                    <h3>Demo Accounts</h3>
+                    <div class="account-grid">
+                        <div class="account">
+                            <h4>👨‍⚕️ Doctor (Full Access)</h4>
+                            <code>doctor@chu-ouaga.bf / Doctor123!</code>
+                        </div>
+                        <div class="account">
+                            <h4>👩‍⚕️ Nurse (Limited)</h4>
+                            <code>nurse@chu-ouaga.bf / Nurse123!</code>
+                        </div>
+                        <div class="account">
+                            <h4>👨‍💼 Admin (System)</h4>
+                            <code>admin@danaya.bf / Admin123!</code>
+                        </div>
+                    </div>
+                </div>
+                <div class="tech-stack">
+                    <h3>Technology Stack</h3>
+                    <div class="tech-badges">
+                        <span class="badge">Python 3.11</span>
+                        <span class="badge">FastAPI</span>
+                        <span class="badge">React 18</span>
+                        <span class="badge">PostgreSQL</span>
+                        <span class="badge">Redis</span>
+                        <span class="badge">Docker</span>
+                        <span class="badge">Nginx</span>
+                    </div>
+                </div>
+                <div class="cta-buttons">
+                    <a href="https://github.com/Conqueror226/danaya" class="btn-github" target="_blank">
+                        View on GitHub
+                    </a>
+                    <a href="docs/presentations/SENSEI_PRESENTATION.md" class="btn-presentation">
+                        Full Presentation
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>DANAYA</h3>
+                    <p>Building trust through technology</p>
+                    <p>🇧🇫 Burkina Faso + 🇯🇵 Japan</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Project</h3>
+                    <ul>
+                        <li>Personal Initiative</li>
+                        <li>Open Source (Apache 2.0)</li>
+                        <li>Cybersecurity Master's Student</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Contact</h3>
+                    <p>Kader BONZI</p>
+                    <p>GitHub: @Conqueror226</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 DANAYA Project | Danaya ka kɛnɛya 💙</p>
+                <p>頑張ります！(Ganbaru!)</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
