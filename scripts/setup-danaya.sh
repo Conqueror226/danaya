@@ -1,43 +1,16 @@
-#!/bin/bash
-
-echo "🔧 Setting up DANAYA Platform..."
-echo "================================"
-
-# Create necessary directories
-mkdir -p infra/postgres
-mkdir -p infra/nginx/ssl
-mkdir -p logs
-
-# Generate JWT secret if .env doesn't exist
-if [ ! -f .env ]; then
-    cp .env.example .env
-    # Generate a random secret
-    SECRET=$(openssl rand -hex 32 2>/dev/null || echo "ministry-demo-secret-2025-change-in-production")
-    sed -i "s/change-this-in-production-use-long-random-string/$SECRET/" .env
-    echo "✅ Generated .env file with JWT secret"
-else
-    echo "ℹ️  .env file already exists"
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+if [[ ! -f .env ]]; then
+  cp .env.example .env
+  python3 - <<'PY'
+from pathlib import Path
+import secrets
+p=Path('.env')
+p.write_text(p.read_text().replace('POSTGRES_PASSWORD=\n','POSTGRES_PASSWORD='+secrets.token_hex(32)+'\n'))
+p.chmod(0o600)
+PY
 fi
-
-# Check Docker
-if ! command -v docker &> /dev/null; then
-    echo "❌ Docker not found. Please install Docker first."
-    exit 1
-fi
-
-echo "✅ Docker found"
-
-# Check Docker Compose
-if ! docker compose version &> /dev/null; then
-    echo "❌ Docker Compose not found. Please install Docker Compose first."
-    exit 1
-fi
-
-echo "✅ Docker Compose found"
-
-echo ""
-echo "✅ Setup complete!"
-echo ""
-echo "Next steps:"
-echo "  1. Review .env file for configuration"
-echo "  2. Run: ./scripts/start-danaya.sh"
+docker compose build
+docker compose up -d --wait api frontend
+printf '%s\n' 'Danaya is starting at http://localhost:8080' 'Add your facility and account using DOCKER_DEPLOYMENT.md. No default account is created.'

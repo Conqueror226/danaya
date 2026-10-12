@@ -1,407 +1,113 @@
-# DANAYA Telemedicine Architecture
+# Danaya 0.2 architecture
 
-## Executive Summary
+## Decision: one coherent clinical backend
 
-Telemedicine integration enables remote healthcare delivery across Burkina Faso's 4-tier hospital system (CHU → CHR → CMA → CSPS), addressing critical access gaps in rural areas.
+The pilot uses a modular FastAPI application and one PostgreSQL database, with organization scoping on each clinical entity. This keeps patient, order and audit writes in a single transaction and reduces operational work for a small hospital team. Split services only when measured load or independently owned integrations justify the added complexity.
 
-## Use Cases
-
-### 1. **Rural-Urban Consultation**
-**Scenario:** CSPS nurse in Dori needs specialist consultation
-- 📹 Video call to CHR Ouahigouya specialist
-- 📊 Real-time vital signs sharing
-- 💊 Remote prescription approval
-- 📤 Patient transfer if needed
-
-### 2. **Emergency Triage**
-**Scenario:** Accident victim at CSPS with limited resources
-- 🚑 Video link to CHU emergency doctor
-- 🩺 Guided examination procedures
-- ⚡ Real-time decision support
-- 🚁 Evacuation coordination
-
-### 3. **Continuing Medical Education**
-**Scenario:** Training for rural healthcare workers
-- 🎓 Weekly webinars from CHU specialists
-- 📚 Access to medical library
-- 📊 Case study discussions
-- 🏆 Certification programs
-
-### 4. **Inter-Hospital Referrals**
-**Scenario:** Complex case requiring higher-level care
-- 📋 Complete dossier transfer
-- 🏥 Bed availability check
-- 🚗 Transport coordination
-- 📞 Direct specialist handoff
-
-## Technical Architecture
-
-### Core Components
-```
-┌─────────────────────────────────────────────────────────┐
-│                 DANAYA Telemedicine Layer               │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │   WebRTC     │  │   Chat       │  │   File       │ │
-│  │   Video      │  │   Service    │  │   Transfer   │ │
-│  └──────────────┘  └──────────────┘  └──────────────┘ │
-│                                                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
-│  │   Session    │  │   Recording  │  │   Analytics  │ │
-│  │   Manager    │  │   Service    │  │   Dashboard  │ │
-│  └──────────────┘  └──────────────┘  └──────────────┘ │
-│                                                          │
-├─────────────────────────────────────────────────────────┤
-│              DANAYA Core Platform (Auth, EHR)           │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+  Public["Public introduction"] --> Web["React portal"]
+  Staff["Authenticated care team"] --> Web
+  Web --> Edge["Caddy HTTPS and Nginx gateway"]
+  Edge --> API["FastAPI: session, role and facility checks"]
+  API --> Clinical["Patients, records and referrals"]
+  API --> Audit["Audit events"]
+  Clinical --> DB[("PostgreSQL")]
+  Audit --> DB
+  DB --> Backup["Restricted backup destination"]
 ```
 
-### Technology Stack
+A distinct demonstration build uses an in-memory browser adapter and fictional fixtures. It is not connected to this backend and must never be used as evidence that server access controls are operating.
 
-#### Video/Audio (WebRTC)
-- **Jitsi Meet** (open-source, self-hosted)
-- **Mediasoup** (SFU for multi-party calls)
-- **Coturn** (TURN/STUN server for NAT traversal)
+## Implemented boundaries
 
-#### Chat & Messaging
-- **Matrix** (decentralized, E2E encrypted)
-- **Element** (UI client)
-- **HIPAA/GDPR compliant**
+- All non-health API reads require a valid, unexpired, active account session. Passwords use per-password salts and scrypt; only SHA-256 hashes of high-entropy session tokens are stored server-side.
+- Cookies are HttpOnly, SameSite=Strict, scoped to `/api`, and Secure in production. Write requests must have the exact configured Origin and `X-Danaya-Request: 1`. There is no cross-origin API permission.
+- The server derives a facility from the authenticated user, never from a patient-create request. Patient IDs from another facility produce 404. Clinical read types and write transitions are role-restricted.
+- Administrative users can manage registration and appointments and read audit history, but cannot read clinical notes/results/prescriptions. Privileged database operators are a separate trusted operational boundary.
+- Each patient update and order/referral state transition includes a version. A stale version causes 409; finalized records cannot silently transition again.
+- Audit inserts commit with clinical writes. Read events cover patient/detail/record/referral/audit access. Logs store resource references and actions, not clinical text. Database administrators could still alter them: external immutable archival is not implemented.
 
-#### Storage & Recording
-- **MinIO** (S3-compatible object storage)
-- **Encrypted storage** (AES-256)
-- **7-year retention** (legal requirement)
+## Core model
 
-#### Security
-- **End-to-end encryption** (WebRTC DTLS-SRTP)
-- **Zero-trust networking** (mutual TLS)
-- **Session recording** (encrypted, auditable)
-- **Access logging** (all sessions tracked)
-
-## Implementation Phases
-
-### Phase 0: Core Platform (Dec 2025 - Mar 2026)
-**Current Status:** ✅ In Progress
-
-**Deliverables:**
-- ✅ Authentication service (JWT, RBAC)
-- ✅ Patient management service
-- ✅ Hospital registry service
-- ✅ Frontend with role-based UI
-- 🚧 Database migration to PostgreSQL
-- 🚧 Docker deployment
-- 🚧 Ministry demonstration
-
-### Phase 1: Telemedicine Pilot (Q2 2026)
-**Scope:** 3 hospitals (1 CHU, 1 CHR, 1 CSPS)
-
-**Deliverables:**
-- ✅ WebRTC infrastructure setup
-- ✅ Basic video consultation
-- ✅ Encrypted chat
-- ✅ Session recording
-- ✅ User training materials
-- ✅ Network bandwidth testing
-
-**Timeline:**
-- April 2026: Infrastructure setup
-- May 2026: Internal testing
-- June 2026: Pilot launch with 3 facilities
-
-**Success Metrics:**
-- 50+ consultations/month
-- <5% connection failures
-- 90%+ user satisfaction
-- <500ms latency
-
-### Phase 2: Regional Rollout (Q3 2026)
-**Scope:** 10 facilities across 3 regions (Centre, Hauts-Bassins, Nord)
-
-**Deliverables:**
-- ✅ Multi-party conferencing
-- ✅ Screen sharing
-- ✅ File transfer (images, PDFs)
-- ✅ Mobile app (Android)
-- ✅ Offline messaging
-- ✅ Bandwidth optimization
-
-**Timeline:**
-- July 2026: Feature development
-- August 2026: Regional testing
-- September 2026: Rollout to 10 facilities
-
-**Success Metrics:**
-- 200+ consultations/month
-- 80%+ of pilot CSPS connected
-- <2% dropped calls
-
-### Phase 3: National Deployment (Q4 2026 - Q1 2027)
-**Scope:** All 180+ facilities nationwide
-
-**Deliverables:**
-- ✅ AI-assisted triage
-- ✅ Automatic translation (French/Mooré/Dioula)
-- ✅ Vital signs integration
-- ✅ Advanced bandwidth optimization
-- ✅ Satellite backup (for remote areas)
-- ✅ 24/7 support center
-
-**Timeline:**
-- October 2026: Preparation and training
-- November 2026: Phase 1 facilities (50 sites)
-- December 2026: Phase 2 facilities (80 sites)
-- January 2027: Final rollout (remaining 50+ sites)
-
-**Success Metrics:**
-- 1000+ consultations/month
-- 95% facility coverage
-- 99.5% uptime
-- <1% user complaints
-
-## Zero-Trust Security for Telemedicine
-
-### Challenges
-1. **Low bandwidth** in rural areas
-2. **Intermittent connectivity**
-3. **Device diversity** (old computers, phones)
-4. **Privacy concerns** (video/audio recordings)
-5. **Electrical power instability**
-
-### Solutions
-1. **Adaptive bitrate** (320p to 1080p based on network)
-2. **Offline queue** (store-and-forward for unstable connections)
-3. **Progressive Web App** (works on any device)
-4. **End-to-end encryption** (zero-knowledge architecture)
-5. **Local recording** (encrypted on device, synced when online)
-6. **Battery optimization** (up to 4 hours on mobile devices)
-7. **Solar-powered TURN servers** (for rural deployments)
-
-### Compliance
-- ✅ GDPR-compliant (data protection)
-- ✅ HIPAA-aligned (healthcare privacy)
-- ✅ Burkina Faso data sovereignty (local storage)
-- ✅ Ministry of Health regulations
-
-## Network Architecture
-
-### Bandwidth Requirements
-
-| Quality Level | Video | Audio | Total | Use Case |
-|---------------|-------|-------|-------|----------|
-| Low | 300 kbps | 50 kbps | 350 kbps | Rural CSPS (3G) |
-| Medium | 500 kbps | 64 kbps | 564 kbps | CMA (4G) |
-| High | 1.5 Mbps | 128 kbps | 1.6 Mbps | CHR/CHU (Fiber) |
-
-### Fallback Strategy
-```
-1. Try WebRTC P2P (best quality, lowest latency)
-2. Fall back to TURN relay (if NAT/firewall blocks)
-3. Fall back to SFU (if multiple participants)
-4. Fall back to audio-only (if bandwidth too low)
-5. Fall back to chat + images (if all video fails)
-6. Fall back to async messaging (if completely offline)
+```mermaid
+erDiagram
+  FACILITY ||--o{ USER : employs
+  FACILITY ||--o{ PATIENT : holds
+  USER ||--o{ SESSION : authenticates
+  PATIENT ||--o{ RECORD : has
+  USER ||--o{ RECORD : authors
+  PATIENT ||--o{ TRANSFER : referred
+  FACILITY ||--o{ TRANSFER : sends_or_receives
+  FACILITY ||--o{ AUDIT : scopes
 ```
 
-## Cost Estimation
+| Entity | Important contents and relationships |
+| --- | --- |
+| Facility | Operator-assigned ID, name, city; no unverified national registry imported automatically |
+| User | Unique normalized email, display name, role, facility, salted password hash, active flag |
+| Patient | Local UUID, facility, names, birth date, sex, optional national ID/contact; unique non-null national ID within a facility |
+| Record | Patient/facility/author, kind, validated JSON payload, status, UTC timestamp and version |
+| Transfer | Source/destination, source patient reference, minimal identity snapshot, summary, authorization note, status/version |
+| Audit | UTC timestamp, actor ID, facility, action, resource ID |
+| Session | Token digest, account ID and expiry; revoked on logout, disablement or password reset |
 
-### Infrastructure (Year 1: 2026)
+National IDs are optional and are not proof of identity. Similar names/birth dates require human checking. There is no national master patient index, automatic cross-hospital merge, allergy reconciliation or longitudinal national patient record.
 
-| Component | Cost (€) | Notes |
-|-----------|----------|-------|
-| Jitsi servers (3x) | €15,000 | On-premises, redundant |
-| TURN servers (2x) | €8,000 | NAT traversal |
-| Storage (100TB) | €12,000 | Encrypted recordings |
-| Bandwidth | €24,000 | €2k/month |
-| Mobile app development | €18,000 | Android + iOS |
-| Training programs | €10,000 | Staff training |
-| **Total Year 1** | **€87,000** | ~€7.25k/month |
+Free-text clinical notes, prescriptions and laboratory results support a demonstration workflow. Laboratory units/reference intervals and medication dose/route/duration are entered explicitly by staff; the platform does not validate their medical correctness. Files, diagnostic images, analyzer protocols, inventory, billing, FHIR resources and telemedicine are outside this implementation.
 
-### Operating Costs (Year 2+)
+## Roles
 
-| Component | Annual Cost (€) |
-|-----------|-----------------|
-| Bandwidth | €24,000 |
-| Maintenance | €15,000 |
-| Support staff | €30,000 |
-| **Total/Year** | **€69,000** |
+| Action | Doctor | Nurse | Pharmacy | Laboratory | Admin |
+| --- | --- | --- | --- | --- | --- |
+| Find patient identity | Yes | Yes | Minimal | Minimal | Yes |
+| Register/update patient identity | Yes | Yes | No | No | Yes |
+| Read notes, results and prescriptions | Yes | Yes | Prescriptions only | Laboratory only | No |
+| Write observation | Yes | Yes | No | No | No |
+| Schedule/finish/cancel visit | Yes | Yes | No | No | Yes |
+| Request/cancel analysis | Yes | Yes | No | No | No |
+| Finalize lab result | No | No | No | Yes | No |
+| Prescribe/cancel prescription | Yes | No | No | No | No |
+| Confirm dispensing | No | No | Yes | No | No |
+| Read sent/received referrals | Yes | Yes | No | No | No |
+| Send/respond to referral | Yes | No | No | No | No |
+| Read facility audit history | No | No | No | No | Yes |
 
-### ROI Analysis
+This is facility/role-based access, not care-team assignment-based access. Add purpose-of-use and patient/encounter assignment restrictions before handling sensitive real workflows.
 
-**Savings:**
-- Reduced patient transfers: €180k/year
-- Faster diagnosis: €95k/year
-- Training cost reduction: €50k/year
-- Reduced emergency evacuations: €75k/year
-- **Total Savings:** €400k/year
+## Referral sequence
 
-**Break-even:** 3-4 months after full deployment
-
-**5-Year ROI:** 425%
-
-## Integration with Existing Platform
-
-### API Endpoints
-```python
-# Start telemedicine session
-POST /api/v1/telemedicine/sessions
-{
-  "provider_id": "USR001",
-  "patient_id": "P001",
-  "hospital_from": "BF-CSPS-DOR-01",
-  "hospital_to": "BF-CHU-YALG",
-  "type": "consultation",  # or "referral", "education", "emergency"
-  "priority": "routine"    # or "urgent", "emergency"
-}
-
-# Join session
-GET /api/v1/telemedicine/sessions/{session_id}/join
-Response: {
-  "jitsi_room_url": "https://meet.danaya.bf/session-12345",
-  "token": "jwt_token_here",
-  "expires_at": "2026-04-15T14:30:00Z"
-}
-
-# End session
-POST /api/v1/telemedicine/sessions/{session_id}/end
-{
-  "duration_seconds": 1245,
-  "outcome": "referred",  # or "resolved", "scheduled_followup"
-  "notes": "Patient requires specialist care..."
-}
-
-# Get recordings
-GET /api/v1/telemedicine/sessions/{session_id}/recordings
-Response: {
-  "video_url": "https://storage.danaya.bf/recordings/encrypted/xyz.webm",
-  "transcript_url": "https://storage.danaya.bf/transcripts/xyz.txt",
-  "expires_at": "2033-04-15T00:00:00Z"  # 7-year retention
-}
-
-# Get session history
-GET /api/v1/telemedicine/sessions?patient_id=P001&limit=10
-
-# Schedule future session
-POST /api/v1/telemedicine/sessions/schedule
-{
-  "scheduled_at": "2026-04-20T10:00:00Z",
-  "provider_id": "USR001",
-  "patient_id": "P001"
-}
+```mermaid
+sequenceDiagram
+  participant A as Referring doctor
+  participant API as Danaya API
+  participant DB as PostgreSQL
+  participant B as Receiving doctor
+  A->>API: Identity, summary, destination, authorization note
+  API->>API: Verify source facility, role and required consent
+  API->>DB: Commit targeted snapshot and audit
+  B->>API: Retrieve referrals for own facility
+  API-->>B: Minimal identity and referral summary
+  B->>API: Accept or decline with current version
+  API->>DB: Conditional transition and audit
+  A->>API: Refresh referral status
+  API-->>A: Recorded decision
 ```
 
-### Database Schema
-```sql
-CREATE TABLE telemedicine_sessions (
-  session_id UUID PRIMARY KEY,
-  provider_id VARCHAR REFERENCES users(user_id),
-  patient_id VARCHAR REFERENCES patients(patient_id),
-  hospital_from VARCHAR REFERENCES facilities(id),
-  hospital_to VARCHAR REFERENCES facilities(id),
-  session_type VARCHAR, -- consultation, referral, education, emergency
-  priority VARCHAR,     -- routine, urgent, emergency
-  scheduled_at TIMESTAMP,
-  started_at TIMESTAMP,
-  ended_at TIMESTAMP,
-  duration_seconds INTEGER,
-  recording_url VARCHAR,
-  transcript_url VARCHAR,
-  status VARCHAR, -- scheduled, active, completed, cancelled, failed
-  outcome VARCHAR, -- resolved, referred, scheduled_followup
-  notes TEXT,
-  participant_count INTEGER,
-  bandwidth_quality VARCHAR, -- low, medium, high
-  connection_failures INTEGER,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
+The recipient cannot open the source patient record. Acceptance is acknowledgement of the referral, not a transfer of record ownership or confirmation of physical arrival. The pilot does not book transport or provision a receiving patient record. Information needed for continuity must be intentionally included in the summary.
 
-CREATE TABLE telemedicine_participants (
-  participant_id UUID PRIMARY KEY,
-  session_id UUID REFERENCES telemedicine_sessions(session_id),
-  user_id VARCHAR REFERENCES users(user_id),
-  joined_at TIMESTAMP,
-  left_at TIMESTAMP,
-  role VARCHAR, -- presenter, participant, observer
-  audio_enabled BOOLEAN,
-  video_enabled BOOLEAN
-);
+## Availability and rural operation
 
-CREATE TABLE telemedicine_recordings (
-  recording_id UUID PRIMARY KEY,
-  session_id UUID REFERENCES telemedicine_sessions(session_id),
-  file_url VARCHAR,
-  file_size_bytes BIGINT,
-  duration_seconds INTEGER,
-  encryption_key_hash VARCHAR, -- never store actual key
-  retention_until TIMESTAMP,   -- 7 years from session date
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
+Deploy the complete stack on a hospital LAN server for local operation during Internet outages. Use stable local DNS, trusted TLS and power protection. The browser still needs a connection to that server. Do not imply that a browser-only offline cache or inter-server synchronization exists.
 
-## Research Opportunities (Thesis)
+For the next phase, implement an explicit outbox/inbox with durable event IDs, idempotent delivery, ordering per record, origin/version metadata, retries and a visible reconciliation queue. Signed clinical records must remain immutable; corrections append an attributed amendment. Conflicting identities require a trained review process. Never use last-write-wins for medication or laboratory results. Revoked sharing rights and stale authorization need explicit offline policy.
 
-### Novel Contributions
+## National evolution (planned, not implemented)
 
-1. **Zero-Trust Telemedicine Architecture in Resource-Constrained Settings**
-   - First comprehensive implementation in West Africa
-   - Novel approach to intermittent connectivity with zero-trust principles
-   - Security evaluation under adverse network conditions
+1. Validate one hospital's workflows, safety controls, access policy and disaster recovery using synthetic then approved supervised data.
+2. Add a second institution on a controlled deployment; verify identity reconciliation, referral governance and measured latency/recovery objectives.
+3. Establish authoritative facility/provider registries, a governed master patient index, consent/legal-basis service, terminology management and a versioned interoperability implementation guide.
+4. Add a gateway with validated HL7 FHIR profiles and legacy LIS/pharmacy adapters. Pin the chosen versions and terminology with the ministry and vendors rather than claiming generic “FHIR compliance.”
+5. Introduce resilient national exchange and per-hospital outboxes. Separate analytical reporting from clinical databases, de-identify as appropriate, and govern access independently.
 
-2. **Multi-Tier Healthcare Network Routing**
-   - CSPS ↔ CMA ↔ CHR ↔ CHU intelligent routing algorithm
-   - Load balancing across specialist availability
-   - Emergency prioritization framework
-
-3. **AI-Assisted Triage for Low-Bandwidth Environments**
-   - ML model for routing emergency cases
-   - Trained on Burkina Faso healthcare data
-   - Operates with limited connectivity
-
-4. **Security vs. Usability Trade-offs**
-   - Threat modeling for telemedicine in developing countries
-   - Attack surface analysis
-   - Penetration testing results
-   - User acceptance study
-
-### Thesis Chapter Structure
-
-**Chapter 5: Telemedicine Extension**
-- 5.1 Motivation and Use Cases
-- 5.2 Architecture Design
-- 5.3 Security Considerations
-- 5.4 Implementation Details
-- 5.5 Pilot Study Results
-- 5.6 Evaluation and Discussion
-
-## Future Enhancements (2027+)
-
-### Year 2 (2027)
-- 🤖 AI symptom checker (French/Mooré/Dioula)
-- �� USSD-based consultation booking (for feature phones)
-- 🩺 IoT device integration (vital signs monitors)
-- 🎯 Specialist matching algorithm
-- 📊 Predictive analytics (disease outbreak detection)
-
-### Year 3 (2028)
-- 🌍 Cross-border telemedicine (Mali, Côte d'Ivoire, Niger)
-- 🚁 Drone delivery integration (medication/samples)
-- 🏥 VR training simulations
-- 📡 Starlink backup connectivity
-- 🔬 Remote diagnostics with AI assistance
-
-## Conclusion
-
-Telemedicine is not just an add-on—it's a **critical enabler** for equitable healthcare access in Burkina Faso. Integration with DANAYA's zero-trust architecture ensures security without compromising usability in low-resource settings.
-
-**Key Innovation:** First zero-trust telemedicine platform designed specifically for resource-constrained environments with intermittent connectivity.
-
----
-
-**Author:** Kader BONZI  
-**Institution:** Master's in Cybersecurity, Burkina Faso  
-**Date:** December 2025  
-**Status:** Planning & Documentation Phase  
-**Target Launch:** Q2 2026 (Pilot) → Q4 2026-Q1 2027 (National)  
-**Thesis Defense:** Expected June 2026
+For millions of records, measure query plans and use composite facility/status/time indexes, keyset pagination, connection pooling, background exchange workers and appropriate partitioning. The current offset pagination and single-host Compose are a small-pilot baseline, not a national-scale performance claim. Never add hospital count without checking isolation, load and disaster recovery.

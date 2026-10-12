@@ -1,3 +1,5 @@
+> Historical database proposal. The implemented schema is backend/platform/app/db.py and its Alembic migrations; see docs/ARCHITECTURE.md.
+
 # DANAYA — Database Design Document (DDD)
 
 **Project:** DANAYA — National Digital Health Platform of Burkina Faso

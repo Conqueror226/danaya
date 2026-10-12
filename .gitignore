@@ -205,3 +205,14 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Application dependencies and local health data
+node_modules/
+frontend/staff-portal/dist/
+*.db
+*.db-shm
+*.db-wal
+*.dump
+.env
+!.env.example
+.openai/
