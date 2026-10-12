@@ -1,14 +1,14 @@
-# Danaya ka kɛnɛya — digital healthcare platform
+# Danaya ka kɛnɛya - A digital healthcare platform
 
-**Status: research prototype / pre-production. Do not use with real patient data.**
+**Status: research prototype / pre-production. At this stage, we don't use with real patient data.**
 
-Danaya is a Burkina Faso–focused digital healthcare platform. The existing repository includes a staff portal and services for authentication, patients, and a healthcare-facility registry. The longer-term vision includes appointments, teleconsultation, health education, patient workflows, and interoperable records. **Those ambitions are not claims of implemented or clinically validated functionality.**
+Danaya is a Burkina Faso–focused digital healthcare platform. The existing repository includes a staff portal and services for authentication, patients and a healthcare-facility registry. The longer-term vision includes appointments, teleconsultation, health education, patient workflows and interoperable records.
 
 ## Product direction
 
 The first public-facing release should emphasize: (1) clear multilingual healthcare information and service discovery; (2) verified facility details and contact methods; (3) accessible appointment *requests* with explicit confirmation by a healthcare provider; and (4) mobile-first navigation for low-bandwidth connections. The staff-facing patient-record and clinician workflows must stay behind authenticated, role-restricted services. Prioritize French and consider local-language support with vetted translations.
 
-Recommended public navigation: **Accueil · Trouver un établissement · Services · Ressources santé · À propos · Contact**. Clearly mark unverified facilities and unavailable appointment/telemedicine functions; never fabricate clinicians, partnerships, emergency contacts, availability, or medical advice. A friendly, community-led visual style can be inspired by Contact'Elles without copying its branding or content.
+Recommended public navigation: **Accueil · Trouver un établissement · Services · Ressources santé · À propos · Contact**. Clearly mark unverified facilities and unavailable appointment/telemedicine functions; never fabricate clinicians, partnerships, emergency contacts, availability, or medical advice.
 
 ## Architecture (current repo)
 
