@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 from uuid import uuid4
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, create_engine, event
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Index, Integer, JSON, String, Text, UniqueConstraint, create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 
@@ -78,12 +78,17 @@ class Patient(Base):
 
 class Record(Base):
     __tablename__ = "records"
+    # Composite index covers the most common dashboard query:
+    #   WHERE facility_id = ? AND status = 'pending'
+    __table_args__ = (
+        Index("ix_records_facility_status", "facility_id", "status"),
+    )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
     facility_id: Mapped[str] = mapped_column(ForeignKey("facilities.id"), index=True)
     kind: Mapped[str] = mapped_column(String(30), index=True)
     data: Mapped[dict] = mapped_column(JSON)
-    status: Mapped[str] = mapped_column(String(30), default="pending")
+    status: Mapped[str] = mapped_column(String(30), default="pending", index=True)
     created_at: Mapped[str] = mapped_column(String(40), default=now)
     author_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
     version: Mapped[int] = mapped_column(Integer, default=1)
@@ -91,6 +96,10 @@ class Record(Base):
 
 class Transfer(Base):
     __tablename__ = "transfers"
+    __table_args__ = (
+        Index("ix_transfers_facility_status", "source_id", "status"),
+        Index("ix_transfers_dest_status", "destination_id", "status"),
+    )
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
     patient_id: Mapped[str] = mapped_column(ForeignKey("patients.id"), index=True)
     source_id: Mapped[str] = mapped_column(ForeignKey("facilities.id"), index=True)
@@ -98,7 +107,7 @@ class Transfer(Base):
     summary: Mapped[str] = mapped_column(Text)
     consent_note: Mapped[str] = mapped_column(Text)
     author_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
-    status: Mapped[str] = mapped_column(String(30), default="pending")
+    status: Mapped[str] = mapped_column(String(30), default="pending", index=True)
     created_at: Mapped[str] = mapped_column(String(40), default=now)
     # Snapshot: receiving facility gets only explicitly referred information.
     patient_snapshot: Mapped[dict] = mapped_column(JSON)

@@ -1,5 +1,20 @@
 {$DOMAIN} {
     encode zstd gzip
-    header Strict-Transport-Security "max-age=31536000"
+
+    # Defense-in-depth: nginx (frontend container) already sets these headers.
+    # Repeating them at the Caddy layer ensures they survive a frontend image rebuild
+    # or nginx config change, and appear on any response Caddy generates itself (errors, etc.).
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "no-referrer"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        # Remove headers that leak server information
+        -Server
+        -X-Powered-By
+    }
+
     reverse_proxy frontend:8080
 }

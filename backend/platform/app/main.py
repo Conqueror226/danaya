@@ -28,6 +28,7 @@ READ_KINDS = {"doctor": {"appointment", "lab", "prescription", "note"},
               "nurse": {"appointment", "lab", "prescription", "note"},
               "pharmacist": {"prescription"}, "lab_tech": {"lab"}, "admin": {"appointment"}}
 SCHEMAS = {"appointment": AppointmentData, "lab": LabData, "prescription": PrescriptionData, "note": NoteData}
+SESSION_TTL = 1800  # 30 minutes
 
 
 @app.exception_handler(RequestValidationError)
@@ -88,7 +89,9 @@ def login(payload: Login, response: Response, db: DBSession = Depends(get_db)):
     count = db.scalar(select(func.count()).select_from(LoginAttempt).where(LoginAttempt.key == key))
     if count >= 8:
         db.commit()
-        raise HTTPException(429, "Trop de tentatives. Réessayez dans 15 minutes.")
+        # Retry-After tells clients (and monitoring) when to try again.
+        raise HTTPException(429, "Trop de tentatives. Réessayez dans 15 minutes.",
+                            headers={"Retry-After": "900"})
     user = db.scalar(select(User).where(User.email == email))
     valid = verify_password(payload.password, user.password if user else DUMMY_HASH)
     if not user or not valid or not user.active:
@@ -98,21 +101,38 @@ def login(payload: Login, response: Response, db: DBSession = Depends(get_db)):
     db.execute(delete(LoginAttempt).where(LoginAttempt.key == key))
     db.execute(delete(Session).where(Session.expires <= timestamp))
     token = secrets.token_urlsafe(48)
-    db.add(Session(id=token_hash(token), user_id=user.id, expires=timestamp + 1800))
+    db.add(Session(id=token_hash(token), user_id=user.id, expires=timestamp + SESSION_TTL))
     audit(db, user, "session.login")
     db.commit()
-    response.set_cookie("danaya_session", token, httponly=True, secure=SECURE_COOKIE, samesite="strict", max_age=1800, path="/api")
+    response.set_cookie("danaya_session", token, httponly=True, secure=SECURE_COOKIE, samesite="strict", max_age=SESSION_TTL, path="/api")
     return user_view(db, user)
 
 
 def user_view(db, user):
     return {"id": user.id, "name": user.name, "role": user.role, "facility_id": user.facility_id,
-            "facility": serialize(db.get(Facility, user.facility_id)), "session_seconds": 1800}
+            "facility": serialize(db.get(Facility, user.facility_id)), "session_seconds": SESSION_TTL}
 
 
 @app.get("/api/auth/me")
 def me(request: Request, user: User = Depends(current_user), db: DBSession = Depends(get_db)):
     return {**user_view(db, user), "session_seconds": max(0, request.state.session_expires - int(time.time()))}
+
+
+@app.post("/api/auth/extend")
+def extend_session(request: Request, response: Response, user: User = Depends(current_user), db: DBSession = Depends(get_db)):
+    """Reset the current session's TTL to SESSION_TTL seconds from now.
+
+    Call this on meaningful user activity (form submission, navigation) to prevent
+    mid-workflow expiry. No password is required; the existing session cookie is reused.
+    """
+    token = request.cookies.get("danaya_session", "")
+    new_expiry = int(time.time()) + SESSION_TTL
+    db.execute(update(Session).where(Session.id == token_hash(token)).values(expires=new_expiry))
+    db.commit()
+    # Refresh the cookie max-age so the browser knows the extended deadline.
+    response.set_cookie("danaya_session", token, httponly=True, secure=SECURE_COOKIE,
+                        samesite="strict", max_age=SESSION_TTL, path="/api")
+    return {"session_seconds": SESSION_TTL}
 
 
 @app.post("/api/auth/logout", status_code=204)

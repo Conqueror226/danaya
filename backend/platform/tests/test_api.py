@@ -236,3 +236,20 @@ def test_validation_errors_do_not_echo_passwords_or_patient_information(setup):
     assert response.status_code==422
     assert 'PRIVATE' not in response.text
     assert response.headers['cache-control']=='no-store'
+
+
+def test_session_extend_and_login_retry_after(setup):
+    client,factory=setup
+    c=client()
+    with factory() as db:
+        stored=db.scalar(select(Session));stored.expires=int(__import__('time').time())+60;db.commit()
+    r=c.post('/api/auth/extend')
+    assert r.status_code==200 and r.json()['session_seconds']==1800
+    with factory() as db:
+        assert db.scalar(select(Session)).expires>int(__import__('time').time())+1700
+    anon=TestClient(app,headers=HEADERS)
+    assert anon.post('/api/auth/extend').status_code==401
+    for _ in range(8):
+        anon.post('/api/auth/login',json={'email':'nurse@a.test','password':'wrong'})
+    r=anon.post('/api/auth/login',json={'email':'nurse@a.test','password':'wrong'})
+    assert r.status_code==429 and r.headers.get('Retry-After')=='900'

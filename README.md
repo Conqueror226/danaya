@@ -8,7 +8,7 @@ The longer-term vision includes teleconsultation, verified facility discovery, p
 
 ## Two ways to explore
 
-- **[Open the private interactive demonstration](https://danaya-care-pilot.humbleknoll18.chatgpt.site):** the same responsive interface with clearly fictitious records. Browser-memory only; refreshing clears changes. No real clinical service is connected.
+- **[Open the public interactive demonstration](https://conqueror226.github.io/danaya/):** the same responsive interface with clearly fictitious records, published to GitHub Pages by `.github/workflows/pages.yml`. Browser-memory only; refreshing clears changes. No real clinical service is connected.
 - **Full application:** React/Vite portal → same-origin Nginx gateway → FastAPI → PostgreSQL. Sessions, access controls, records, referrals and audit events persist on the server. Docker Compose supports a local installation and an HTTPS server installation.
 
 The separate demonstration is built with `VITE_DEMO_MODE=true`. This flag is **never** enabled by the clinical Docker image. The professional deployment has no default account or password.

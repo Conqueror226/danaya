@@ -9,6 +9,7 @@ All writes require `Origin` equal to `APP_ORIGIN` and `X-Danaya-Request: 1`. Exc
 | GET `/health` | Anonymous database readiness; 200 or 503, no patient/account counts |
 | POST `/auth/login` | `email`, `password`; sets session cookie; returns own user/facility and remaining session seconds |
 | GET `/auth/me` | Own role/facility and remaining session lifetime |
+| POST `/auth/extend` | Resets the current valid session to 30 minutes from now; returns `session_seconds`. 401 if expired |
 | POST `/auth/logout` | Revokes the current session; 204 |
 | GET `/facilities` | Registered destinations for signed-in users |
 | GET `/patients` | `q`, `offset=0`, `limit=50`; items/total; facility-scoped and role-minimized |
