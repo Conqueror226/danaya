@@ -1,3 +1,5 @@
+> Historical proposal/reference, not a description of the implemented Danaya 0.2 release. See the root README and current docs/ARCHITECTURE.md.
+
 # DANAYA 5-Year Vision
 ```
 2025 (NOW)              2026                2027                2028                2029                2030

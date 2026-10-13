@@ -1,167 +1,67 @@
-
+name: danaya
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: danaya-postgres
+  db:
+    image: postgres:17-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_DB: danaya
+      POSTGRES_USER: danaya
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
-    ports:
-      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U danaya"]
-      interval: 10s
+      test: [CMD-SHELL, pg_isready -U danaya -d danaya]
+      interval: 5s
       timeout: 5s
-      retries: 5
-    networks:
-      - danaya-network
+      retries: 10
     restart: unless-stopped
-
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: danaya-redis
-    ports:
-      - "127.0.0.1:6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-    networks:
-      - danaya-network
-    restart: unless-stopped
-
-  # Hospital Registry Service
-  registry:
-    build:
-      context: ./backend/registry
-      dockerfile: Dockerfile
-    container_name: danaya-registry
-    ports:
-      - "127.0.0.1:8003:8003"
+  migrate:
+    build: ./backend/platform
     environment:
-      - ENVIRONMENT=production
-    networks:
-      - danaya-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Authentication Service
-  auth-service:
-    build:
-      context: ./backend/auth-service
-      dockerfile: Dockerfile
-    container_name: danaya-auth
-    ports:
-      - "127.0.0.1:8001:8001"
-    environment:
-      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
-      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
-      REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379/0
-      REGISTRY_URL: http://registry:8003
-      ENVIRONMENT: production
+      DATABASE_URL: postgresql+psycopg://danaya:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/danaya
+    command: [python, -m, app.manage, init-db]
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-      registry:
-        condition: service_started
-    networks:
-      - danaya-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Patient Service
-  patient-service:
-    build:
-      context: ./backend/patient-service
-      dockerfile: Dockerfile
-    container_name: danaya-patient
-    ports:
-      - "127.0.0.1:8002:8002"
+    restart: "no"
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+  api:
+    build: ./backend/platform
     environment:
-      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
-      REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379/0
-      ENVIRONMENT: production
+      DATABASE_URL: postgresql+psycopg://danaya:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/danaya
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:8080}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - danaya-network
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Frontend (React)
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
   frontend:
-    build:
-      context: ./frontend/staff-portal
-      dockerfile: Dockerfile
-    container_name: danaya-frontend
-    ports:
-      - "127.0.0.1:3000:80"
+    build: ./frontend/staff-portal
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+  edge:
+    image: caddy:2-alpine
+    profiles: [production]
+    ports: ["80:80", "443:443"]
     environment:
-      REACT_APP_API_URL: http://localhost:8001
-      REACT_APP_PATIENT_API_URL: http://localhost:8002
-      REACT_APP_REGISTRY_API_URL: http://localhost:8003
-      REACT_APP_PLATFORM_NAME: DANAYA
-    depends_on:
-      - auth-service
-      - patient-service
-      - registry
-    networks:
-      - danaya-network
-    restart: unless-stopped
-
-  # Nginx Reverse Proxy (Optional - for production)
-  nginx:
-    image: nginx:alpine
-    container_name: danaya-nginx
-    ports:
-      - "127.0.0.1:8080:80"
-      # TLS must be terminated by a configured HTTPS ingress before production use.
-      # - "443:443"
+      DOMAIN: ${DOMAIN:-localhost}
     volumes:
-      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./infra/nginx/ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - frontend
-      - auth-service
-      - patient-service
-      - registry
-    networks:
-      - danaya-network
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [frontend]
     restart: unless-stopped
-
 volumes:
   postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-
-networks:
-  danaya-network:
-    driver: bridge
+  caddy_data:
+  caddy_config:

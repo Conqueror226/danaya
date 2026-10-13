@@ -1,7 +1,8 @@
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:8001",
-});
-
-export default api;
+import { createDemoApi } from "./demo";
+import { request } from "./transport";
+export const DEMO = import.meta.env.VITE_DEMO_MODE === "true";
+const demo = DEMO ? createDemoApi() : null;
+export async function api(path, options = {}) {
+  if (demo) return demo(path, options);
+  return request(path, options);
+}

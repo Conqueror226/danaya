@@ -1,3 +1,5 @@
+> Historical proposal/reference, not a description of the implemented Danaya 0.2 release. See the root README and current docs/ARCHITECTURE.md.
+
 High-Level System Architecture
 
 This healthcare platform follows a modular, service-oriented architecture built to support large-scale clinical workflows, secure patient data exchange, and private-cloud deployment. The system is composed of four major layers: Presentation Layer, Application Services Layer, Integration Layer, and Data Layer. These layers work together to provide a scalable, maintainable, and secure digital healthcare ecosystem.
