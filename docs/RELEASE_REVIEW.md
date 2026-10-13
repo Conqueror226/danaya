@@ -23,7 +23,7 @@ Reviewed against the original prototype and the security/documentation baseline 
 
 The interface is French-first, mobile-responsive, with a warm cream/green palette, large actions, clear departmental navigation and human-centered wording. It uses original CSS/vector composition and the project's Danaya name. No real clinician, customer, partnership, service availability or emergency contact was invented.
 
-The supplied Facebook Contact'Elles page could not be retrieved. Search results were insufficient to establish its exact identity/design; no claim is made that this release matches that page pixel-for-pixel. Screenshots from the intended reference can support a later brand-specific refinement.
+The direct Facebook page could not be retrieved. On 2026-10-13, indexed posts identified [ELLES in Cotonou](https://www.facebook.com/contactelles/) as a women’s health service emphasizing accessible information and remote consultations, and linked to [its web app](https://web.elles.app/). The design adopts approachable French wording and clear care journeys while preserving Danaya’s hospital-coordination scope. The exact visual layout could not be verified; no branding, service availability or clinical content was copied.
 
 ## Verification
 
@@ -49,3 +49,14 @@ The platform remains a technical pilot. Before real patient use, prioritize:
 6. Governed FHIR/legacy adapters and explicit outbox/inbox synchronization for independently deployed hospitals. Neither is implemented today.
 
 Automatic patient matching, generalized idempotent creation, browser-offline writes, pharmacy inventory, image/document storage, teleconsultation and national-scale operation are not included. The application must not be marketed as providing these capabilities.
+
+## Final integration review — 2026-10-13
+
+- Resolved the README conflict with the latest main branch, preserving the Danaya ka kɛnɛya name and the public-care product direction.
+- Added public questions covering patient access, provider onboarding, privacy, connectivity and accessibility/support. No patient booking or teleconsultation is presented as available.
+- Extracted the HTTP transport: 30-second request timeout, strict JSON response handling, no automatic retries, and explicit uncertain-write feedback. Failed/ambiguous writes disable resubmission in the open form and direct the user to reconcile the list. This does not provide idempotency or eliminate every possible duplicate.
+- Guarded asynchronous patient reads and writes across session changes, clearing pending state on expiry. A late response cannot reopen the previous staff member’s patient detail in a new session.
+- Replaced verbose request-validation responses with a generic error so invalid passwords and patient inputs are not echoed back.
+- Local validation: 18 backend/security/migration tests and 13 frontend/transport/session tests pass; production frontend build passes.
+- Baseline [GitHub run 38270649456](https://github.com/Conqueror226/danaya/actions/runs/38270649456) passed all three jobs, including PostgreSQL, migration drift checks, Docker build/start and gateway smoke tests. The final integration commit is checked again before merging.
+- Interactive browser, mobile layout and screen-reader QA remain unavailable in this workspace. Passing component tests is not an accessibility certification.

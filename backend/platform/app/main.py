@@ -3,6 +3,7 @@ import os
 import time
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 from sqlalchemy import delete, func, or_, select, text, update
 from sqlalchemy.exc import IntegrityError
@@ -27,6 +28,12 @@ READ_KINDS = {"doctor": {"appointment", "lab", "prescription", "note"},
               "nurse": {"appointment", "lab", "prescription", "note"},
               "pharmacist": {"prescription"}, "lab_tech": {"lab"}, "admin": {"appointment"}}
 SCHEMAS = {"appointment": AppointmentData, "lab": LabData, "prescription": PrescriptionData, "note": NoteData}
+
+
+@app.exception_handler(RequestValidationError)
+async def invalid_request(request, exc):
+    # FastAPI's default error includes input values (potential passwords/health data).
+    return JSONResponse({"detail": "Champs invalides. Vérifiez les informations saisies."}, status_code=422)
 
 
 def serialize(row):

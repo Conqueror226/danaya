@@ -3,12 +3,13 @@ import { Field, Pagination } from "./components";
 import { api } from "./api";
 function Form({ children, onSubmit, submit = "Enregistrer", onClose }) {
   const [error, setError] = useState(""),
+    [uncertain, setUncertain] = useState(false),
     [busy, setBusy] = useState(false);
   return (
     <form
       onSubmit={async (e) => {
         e.preventDefault();
-        if (busy) return;
+        if (busy || uncertain) return;
         const body = Object.fromEntries(new FormData(e.currentTarget));
         setBusy(true);
         setError("");
@@ -17,6 +18,7 @@ function Form({ children, onSubmit, submit = "Enregistrer", onClose }) {
           onClose();
         } catch (err) {
           setError(err.message);
+          setUncertain(Boolean(err.uncertain));
         } finally {
           setBusy(false);
         }
@@ -35,9 +37,9 @@ function Form({ children, onSubmit, submit = "Enregistrer", onClose }) {
           disabled={busy}
           onClick={onClose}
         >
-          Annuler
+          {uncertain ? "Fermer et vérifier la liste" : "Annuler"}
         </button>
-        <button className="button" disabled={busy}>
+        <button className="button" disabled={busy || uncertain}>
           {busy ? "Enregistrement…" : submit}
         </button>
       </div>

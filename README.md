@@ -1,12 +1,14 @@
-# Danaya — La santé, en confiance
+# Danaya ka kɛnɛya — La santé, en confiance
 
 A French-first healthcare coordination platform for teams in Burkina Faso. Danaya brings patient registration, clinical observations, appointments, laboratory requests, prescriptions and inter-facility referrals into one role-aware workspace.
 
 **Version 0.2 is a deployable technical pilot for evaluation with fictitious data. It is not a clinically validated national EMR or an approved service for real patient records.**
 
+The longer-term vision includes teleconsultation, verified facility discovery, patient appointment requests, health education and interoperable records. These services require provider onboarding and are not available in this pilot.
+
 ## Two ways to explore
 
-- **Interactive demonstration:** the same responsive interface with clearly fictitious records. Browser-memory only; refreshing clears changes. No real clinical service is connected.
+- **[Open the private interactive demonstration](https://danaya-care-pilot.humbleknoll18.chatgpt.site):** the same responsive interface with clearly fictitious records. Browser-memory only; refreshing clears changes. No real clinical service is connected.
 - **Full application:** React/Vite portal → same-origin Nginx gateway → FastAPI → PostgreSQL. Sessions, access controls, records, referrals and audit events persist on the server. Docker Compose supports a local installation and an HTTPS server installation.
 
 The separate demonstration is built with `VITE_DEMO_MODE=true`. This flag is **never** enabled by the clinical Docker image. The professional deployment has no default account or password.

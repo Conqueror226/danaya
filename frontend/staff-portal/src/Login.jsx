@@ -31,7 +31,7 @@ export default function Login({ onLogin, onBack }) {
         <small>Danaya ka kɛnɛya — La santé, en confiance.</small>
       </div>
       <main className="login-main">
-        <button className="text-link" onClick={onBack}>
+        <button className="text-link" disabled={busy} onClick={onBack}>
           <ChevronLeft size={16} /> Retour à l’accueil
         </button>
         <div className="login-form">
@@ -47,6 +47,7 @@ export default function Login({ onLogin, onBack }) {
           <form
             onSubmit={async (e) => {
               e.preventDefault();
+              if (busy) return;
               setBusy(true);
               setError("");
               try {

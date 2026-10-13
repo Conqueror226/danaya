@@ -79,7 +79,7 @@ For a rural LAN, install the same stack locally. Use a locally trusted HTTPS cer
 - Open two copies of an editable record. Save one, then the other: the second must return a conflict instead of silently overwriting.
 - Stop/restart services and verify records remain. Test expired sessions, account disablement, tablet/mobile layouts and keyboard/screen-reader workflows.
 
-A failed request after network loss may have reached the server. Do not blindly resubmit a registration/order: refresh and confirm the outcome first. There is no general idempotent-write receipt or offline outbox in this release.
+A failed request after network loss may have reached the server. Do not blindly resubmit a registration/order: refresh and confirm the outcome first. The portal times out after 30 seconds, does not retry automatically, and blocks the open form’s submit button after an ambiguous response. Close the form, refresh the relevant list and reconcile before opening a new form. There is no general idempotent-write receipt or offline outbox in this release.
 
 ## 5. Backups and recovery
 

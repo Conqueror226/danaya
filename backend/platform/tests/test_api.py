@@ -220,3 +220,16 @@ def test_password_whitespace_is_preserved(setup):
     c=TestClient(app,headers=HEADERS)
     assert c.post('/api/auth/login',json={'email':' DOCTOR@A.TEST ','password':password}).status_code==200
     assert c.post('/api/auth/login',json={'email':'doctor@a.test','password':password.strip()}).status_code==401
+
+
+def test_validation_errors_do_not_echo_passwords_or_patient_information(setup):
+    client,_=setup
+    c=TestClient(app,headers=HEADERS)
+    secret='PRIVATE-PASSWORD-' * 20
+    response=c.post('/api/auth/login',json={'email':'doctor@a.test','password':secret})
+    assert response.status_code==422
+    assert 'PRIVATE-PASSWORD' not in response.text
+    response=client().post('/api/patients',json={'first_name':'PRIVATE-PATIENT', 'last_name':'Example','date_of_birth':'PRIVATE-BAD-DATE'})
+    assert response.status_code==422
+    assert 'PRIVATE' not in response.text
+    assert response.headers['cache-control']=='no-store'

@@ -95,7 +95,9 @@ export default function App() {
     [offline, setOffline] = useState(!navigator.onLine),
     [busy, setBusy] = useState(false);
   const loadVersion = useRef(0);
+  const sessionVersion = useRef(0);
   const clearSession = useCallback(() => {
+    sessionVersion.current++;
     loadVersion.current++;
     setUser(null);
     setPatients([]);
@@ -112,12 +114,23 @@ export default function App() {
     setModal(null);
     setQuery("");
     setOffset(0);
+    setTotal(0);
+    setRecordTotal(0);
+    setTransferTotal(0);
+    setAuditTotal(0);
+    setDetailTotal(0);
+    setDetailOffset(0);
+    setBusy(false);
+    setLoading(false);
     setScreen("login");
   }, []);
   useEffect(() => {
+    const version = sessionVersion.current;
+    let active = true;
     if (!DEMO)
       api("/auth/me")
         .then((u) => {
+          if (!active || version !== sessionVersion.current) return;
           setUser(u);
           setScreen("workspace");
         })
@@ -130,6 +143,7 @@ export default function App() {
     window.addEventListener("offline", online);
     window.addEventListener("danaya-session-expired", expired);
     return () => {
+      active = false;
       window.removeEventListener("online", online);
       window.removeEventListener("offline", online);
       window.removeEventListener("danaya-session-expired", expired);
@@ -202,17 +216,28 @@ export default function App() {
     setMessage("");
   }, [page]);
   async function change(path, method, body) {
+    const version = sessionVersion.current;
+    const checkSession = () => {
+      if (version !== sessionVersion.current)
+        throw new Error(
+          "Session terminée. Vérifiez le dossier après reconnexion.",
+        );
+    };
     const result = await api(path, { method, body });
+    checkSession();
     await load();
+    checkSession();
     setMessage("Modification enregistrée.");
     if (selected) {
       try {
         const refreshed = await api(
           `/records?patient_id=${selected.id}&offset=${detailOffset}&limit=50`,
         );
+        checkSession();
         setDetailRecords(refreshed.items);
         setDetailTotal(refreshed.total);
       } catch {
+        checkSession();
         setError(
           "Enregistrement confirmé, mais actualisation indisponible. Ne ressaisissez pas cet élément ; actualisez le dossier.",
         );
@@ -224,20 +249,23 @@ export default function App() {
     if (busy) return;
     setBusy(true);
     setError("");
+    const version = sessionVersion.current;
     try {
       await fn();
     } catch (err) {
-      setError(err.message);
+      if (version === sessionVersion.current) setError(err.message);
     } finally {
-      setBusy(false);
+      if (version === sessionVersion.current) setBusy(false);
     }
   }
   async function openPatient(p, nextOffset = 0) {
+    const version = sessionVersion.current;
     await act(async () => {
       const [detail, r] = await Promise.all([
         api(`/patients/${p.id}`),
         api(`/records?patient_id=${p.id}&offset=${nextOffset}&limit=50`),
       ]);
+      if (version !== sessionVersion.current) return;
       setSelected(detail);
       setDetailRecords(r.items);
       setDetailTotal(r.total);
@@ -369,6 +397,8 @@ export default function App() {
       <Login
         onBack={() => setScreen("landing")}
         onLogin={(u) => {
+          sessionVersion.current++;
+          loadVersion.current++;
           setUser(u);
           setScreen("workspace");
           setPage("dashboard");
@@ -1161,6 +1191,7 @@ export default function App() {
 }
 function Confirm({ onClose, onConfirm }) {
   const [error, setError] = useState(""),
+    [uncertain, setUncertain] = useState(false),
     [busy, setBusy] = useState(false);
   return (
     <>
@@ -1175,11 +1206,11 @@ function Confirm({ onClose, onConfirm }) {
       )}
       <div className="form-actions">
         <button disabled={busy} className="button ghost" onClick={onClose}>
-          Revenir
+          {uncertain ? "Fermer et vérifier la liste" : "Revenir"}
         </button>
         <button
           className="button"
-          disabled={busy}
+          disabled={busy || uncertain}
           onClick={async () => {
             setBusy(true);
             try {
@@ -1187,6 +1218,7 @@ function Confirm({ onClose, onConfirm }) {
               onClose();
             } catch (err) {
               setError(err.message);
+              setUncertain(Boolean(err.uncertain));
             } finally {
               setBusy(false);
             }

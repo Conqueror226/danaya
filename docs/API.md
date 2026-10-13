@@ -48,3 +48,5 @@ Times are serialized with timezone information. IDs are opaque strings. A patien
 - 503: readiness failure.
 
 Reads may be retried. Never blindly retry a write after an ambiguous network timeout: no generalized idempotency receipt is implemented. Version-checked transitions prevent a finalized action being applied twice, but creation requests without a unique national ID can duplicate. The UI distinguishes a confirmed save from a later refresh failure. Client-side role visibility is only usability; the API remains the security boundary.
+
+Request-validation errors return a generic French message without echoing submitted password or patient values. Clients must treat interrupted writes, unexpected response formats and server/gateway failures as potentially committed; confirm the stored outcome before repeating a create request.

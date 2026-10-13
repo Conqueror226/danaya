@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Heart,
@@ -34,6 +34,17 @@ const services = [
 ];
 export default function Landing({ onEnter, demo }) {
   const [menu, setMenu] = useState(false);
+  const menuButton = useRef(null);
+  useEffect(() => {
+    const close = (event) => {
+      if (event.key === "Escape" && menu) {
+        setMenu(false);
+        menuButton.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [menu]);
   return (
     <div className="landing">
       <a className="skip-link" href="#main">
@@ -44,14 +55,20 @@ export default function Landing({ onEnter, demo }) {
           <Brand />
         </a>
         <button
+          ref={menuButton}
           className="icon-btn menu-toggle"
           onClick={() => setMenu(!menu)}
           aria-expanded={menu}
+          aria-controls="public-navigation"
           aria-label="Menu"
         >
           {menu ? <X /> : <Menu />}
         </button>
-        <nav className={menu ? "open" : ""} aria-label="Navigation principale">
+        <nav
+          id="public-navigation"
+          className={menu ? "open" : ""}
+          aria-label="Navigation principale"
+        >
           <a href="#approche" onClick={() => setMenu(false)}>
             Notre approche
           </a>
@@ -60,6 +77,9 @@ export default function Landing({ onEnter, demo }) {
           </a>
           <a href="#confiance" onClick={() => setMenu(false)}>
             La confiance
+          </a>
+          <a href="#questions" onClick={() => setMenu(false)}>
+            Questions utiles
           </a>
         </nav>
         <button className="button small" onClick={onEnter}>
@@ -236,6 +256,105 @@ export default function Landing({ onEnter, demo }) {
               <Check /> Une trace des consultations et modifications
             </li>
           </ul>
+        </section>
+        <section
+          className="section faq-section"
+          id="questions"
+          aria-labelledby="questions-title"
+        >
+          <div>
+            <p className="eyebrow">COMPRENDRE AVANT DE COMMENCER</p>
+            <h2 id="questions-title">
+              Votre santé mérite
+              <br />
+              des réponses claires.
+            </h2>
+            <p>
+              Un point de départ simple pour les patients, les équipes et les
+              établissements.
+            </p>
+            <a
+              className="text-link"
+              href="https://github.com/Conqueror226/danaya"
+            >
+              Découvrir le projet <ArrowRight size={16} />
+            </a>
+          </div>
+          <div className="faq-list">
+            <details>
+              <summary>Je suis patient : puis-je prendre rendez-vous ?</summary>
+              <p>
+                Le pilote est destiné aux équipes des établissements. La
+                réservation par les patients et la téléconsultation ne sont pas
+                encore ouvertes. Contactez directement votre établissement pour
+                organiser vos soins. Danaya n’est pas un service d’urgence.
+              </p>
+            </details>
+            <details>
+              <summary>Que puis-je essayer aujourd’hui ?</summary>
+              <p>
+                Le parcours couvre les dossiers patients, rendez-vous organisés
+                par le personnel, analyses, ordonnances et orientations entre
+                deux établissements. La démonstration permet de changer de
+                métier pour découvrir le travail de chaque équipe, avec des
+                données fictives.
+              </p>
+            </details>
+            <details>
+              <summary>Qui peut consulter un dossier ?</summary>
+              <p>
+                Dans l’application complète, chaque professionnel utilise un
+                compte nominatif rattaché à un établissement. Le serveur vérifie
+                son rôle. Une orientation partage une synthèse ciblée et son
+                autorisation documentée, sans ouvrir tout l’historique du
+                patient.
+              </p>
+            </details>
+            <details>
+              <summary>Comment commencer dans mon établissement ?</summary>
+              <p>
+                Un administrateur installe le pilote, crée l’établissement et
+                attribue les comptes. Commencez avec des données fictives pour
+                évaluer les parcours. L’utilisation de données réelles nécessite
+                une validation clinique, juridique, de sécurité et
+                d’exploitation par l’organisme responsable.
+              </p>
+              <a
+                className="text-link"
+                href="https://github.com/Conqueror226/danaya/blob/main/DOCKER_DEPLOYMENT.md"
+              >
+                Consulter le guide d’installation <ArrowRight size={16} />
+              </a>
+            </details>
+            <details>
+              <summary>
+                Que se passe-t-il si la connexion est interrompue ?
+              </summary>
+              <p>
+                Le navigateur doit pouvoir joindre le serveur de
+                l’établissement. Si un enregistrement n’est pas confirmé,
+                actualisez la liste et vérifiez son résultat avant de le saisir
+                à nouveau. La démonstration conserve les modifications
+                uniquement en mémoire et les efface au rechargement.
+              </p>
+            </details>
+            <details>
+              <summary>Besoin d’aide ou d’un accès adapté ?</summary>
+              <p>
+                Pour un compte ou un mot de passe, contactez votre
+                administrateur local. L’interface propose une navigation au
+                clavier, des champs libellés et un affichage adapté aux petits
+                écrans. Signalez un obstacle d’accessibilité dans le suivi du
+                projet, sans joindre de donnée de patient ni de mot de passe.
+              </p>
+              <a
+                className="text-link"
+                href="https://github.com/Conqueror226/danaya/issues"
+              >
+                Signaler un problème technique <ArrowRight size={16} />
+              </a>
+            </details>
+          </div>
         </section>
         <section className="bottom-cta">
           <div>
