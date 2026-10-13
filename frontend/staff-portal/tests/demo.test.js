@@ -11,21 +11,44 @@ test("demo data is ephemeral and roles expose only relevant record types", async
   const second = createDemoApi();
   await second("/auth/login", { body: { role: "pharmacist" } });
   expect((await second("/patients")).total).toBe(6);
+  for (const role of ["pharmacist", "lab_tech"]) {
+    await second("/auth/login", { body: { role } });
+    const patient = (await second("/patients")).items[0];
+    expect(patient.created_at).toBeTruthy();
+    expect(patient).not.toHaveProperty("phone");
+    expect(patient).not.toHaveProperty("national_id");
+    expect(await second(`/patients/${patient.id}`)).toEqual(patient);
+  }
+  await second("/auth/login", { body: { role: "pharmacist" } });
   expect(
     (await second("/records")).items.every((r) => r.kind === "prescription"),
   ).toBe(true);
 });
 
-test('referral demonstration carries the receiving decision back to the sender', async () => {
-  const demo=createDemoApi();
-  await demo('/auth/login',{body:{role:'doctor'}});
-  const sent=await demo('/transfers',{method:'POST',body:{patient_id:'demo-0',destination_id:'demo-bobo',summary:'Fictional referral summary',consent:true,consent_note:'Fictional authorization note'}});
-  await demo('/auth/logout',{method:'POST'});
-  await demo('/auth/login',{body:{role:'doctor',receiving:true}});
-  expect((await demo('/transfers?offset=0&limit=50')).items[0].id).toBe(sent.id);
-  expect((await demo('/patients')).total).toBe(0);
-  await demo(`/transfers/${sent.id}`,{method:'PATCH',body:{version:1,status:'accepted'}});
-  await demo('/auth/logout',{method:'POST'});
-  await demo('/auth/login',{body:{role:'doctor'}});
-  expect((await demo('/transfers')).items[0].status).toBe('accepted');
+test("referral demonstration carries the receiving decision back to the sender", async () => {
+  const demo = createDemoApi();
+  await demo("/auth/login", { body: { role: "doctor" } });
+  const sent = await demo("/transfers", {
+    method: "POST",
+    body: {
+      patient_id: "demo-0",
+      destination_id: "demo-bobo",
+      summary: "Fictional referral summary",
+      consent: true,
+      consent_note: "Fictional authorization note",
+    },
+  });
+  await demo("/auth/logout", { method: "POST" });
+  await demo("/auth/login", { body: { role: "doctor", receiving: true } });
+  expect((await demo("/transfers?offset=0&limit=50")).items[0].id).toBe(
+    sent.id,
+  );
+  expect((await demo("/patients")).total).toBe(0);
+  await demo(`/transfers/${sent.id}`, {
+    method: "PATCH",
+    body: { version: 1, status: "accepted" },
+  });
+  await demo("/auth/logout", { method: "POST" });
+  await demo("/auth/login", { body: { role: "doctor" } });
+  expect((await demo("/transfers")).items[0].status).toBe("accepted");
 });

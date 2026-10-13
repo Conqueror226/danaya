@@ -144,6 +144,21 @@ export function createDemoApi() {
 
     const [route, query] = path.split("?"),
       params = new URLSearchParams(query);
+    const patientView = (patient) => {
+      if (!patient) throw new Error("Dossier introuvable.");
+      if (!["pharmacist", "lab_tech"].includes(user.role)) return patient;
+      return Object.fromEntries(
+        [
+          "id",
+          "first_name",
+          "last_name",
+          "date_of_birth",
+          "sex",
+          "version",
+          "created_at",
+        ].map((key) => [key, patient[key]]),
+      );
+    };
     const paginate = (rows) => {
       const offset = Number(params.get("offset") || 0),
         limit = Number(params.get("limit") || 50);
@@ -187,10 +202,18 @@ export function createDemoApi() {
             .toLowerCase()
             .includes(q),
       );
-      return paginate(rows);
+      return paginate(rows.map(patientView));
     }
     if (route.startsWith("/patients/") && method === "GET")
-      return patients.find((p) => p.id === route.split("/")[2]);
+      return structuredClone(
+        patientView(
+          patients.find(
+            (p) =>
+              p.id === route.split("/")[2] &&
+              p.facility_id === user.facility_id,
+          ),
+        ),
+      );
     if (route === "/records" && method === "GET") {
       const rows = records.filter(
         (r) =>

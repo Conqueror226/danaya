@@ -737,7 +737,9 @@ export default function App() {
                 </SectionHeading>
                 <div className="patient-mini-grid">
                   {[...patients]
-                    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+                    .sort((a, b) =>
+                      (b.created_at || "").localeCompare(a.created_at || ""),
+                    )
                     .slice(0, 4)
                     .map((p, i) => (
                       <button

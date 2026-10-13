@@ -109,6 +109,9 @@ def test_clinical_role_matrix(setup):
     pharmacy=client('pharmacist')
     row=pharmacy.get('/api/patients').json()['items'][0]
     assert 'phone' not in row and 'national_id' not in row
+    assert row['created_at'] == p['created_at']
+    lab_row=client('lab_tech').get('/api/patients/'+p['id']).json()
+    assert lab_row['created_at'] == p['created_at'] and 'phone' not in lab_row
     assert pharmacy.post('/api/patients',json={'first_name':'A','last_name':'B'}).status_code==403
     assert pharmacy.get('/api/records?kind=note').status_code==403
     assert client('admin').get('/api/records').json()['items']==[]

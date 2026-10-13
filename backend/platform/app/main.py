@@ -54,7 +54,7 @@ def patient_for(db, user, patient_id):
 def patient_view(patient, user):
     data = serialize(patient)
     if user.role in {"pharmacist", "lab_tech"}:
-        data = {key: data[key] for key in ("id", "first_name", "last_name", "date_of_birth", "sex", "version")}
+        data = {key: data[key] for key in ("id", "first_name", "last_name", "date_of_birth", "sex", "version", "created_at")}
     return data
 
 

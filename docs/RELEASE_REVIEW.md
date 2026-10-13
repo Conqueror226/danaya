@@ -57,6 +57,7 @@ Automatic patient matching, generalized idempotent creation, browser-offline wri
 - Extracted the HTTP transport: 30-second request timeout, strict JSON response handling, no automatic retries, and explicit uncertain-write feedback. Failed/ambiguous writes disable resubmission in the open form and direct the user to reconcile the list. This does not provide idempotency or eliminate every possible duplicate.
 - Guarded asynchronous patient reads and writes across session changes, clearing pending state on expiry. A late response cannot reopen the previous staff member’s patient detail in a new session.
 - Replaced verbose request-validation responses with a generic error so invalid passwords and patient inputs are not echoed back.
+- Fixed the pharmacy/laboratory dashboard contract: minimal patient responses retain the creation timestamp used by the recent-patients view. The demo now uses the same minimal fields, and dashboard sorting tolerates older responses without timestamps.
 - Local validation: 18 backend/security/migration tests and 13 frontend/transport/session tests pass; production frontend build passes.
 - Baseline [GitHub run 38270649456](https://github.com/Conqueror226/danaya/actions/runs/38270649456) passed all three jobs, including PostgreSQL, migration drift checks, Docker build/start and gateway smoke tests. The final integration commit is checked again before merging.
 - Interactive browser, mobile layout and screen-reader QA remain unavailable in this workspace. Passing component tests is not an accessibility certification.
