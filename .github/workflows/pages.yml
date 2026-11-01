@@ -32,7 +32,7 @@ jobs:
           VITE_DEMO_MODE: 'true'
           VITE_BASE: /${{ github.event.repository.name }}/
       - run: cp dist/index.html dist/404.html
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: frontend/staff-portal/dist
   deploy:
